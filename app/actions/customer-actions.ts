@@ -10,6 +10,13 @@ export async function getCustomers() {
 
     if (!user) return { success: false, data: [] };
 
+    const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+    const isPro = dbUser?.role === 'PRO_USER' || dbUser?.role === 'ADMIN';
+
+    if (!isPro) {
+        return { success: false, error: "Pro subscription required", data: [] };
+    }
+
     try {
         const customers = await prisma.customer.findMany({
             where: { userId: user.id },

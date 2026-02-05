@@ -5,6 +5,7 @@ import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { ThemeProvider } from "@/components/theme-provider"
 import { LanguageProvider } from "@/components/language-provider"
+import '@/lib/server-init' // Auto-restore WhatsApp sessions on server startup
 
 const jakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],

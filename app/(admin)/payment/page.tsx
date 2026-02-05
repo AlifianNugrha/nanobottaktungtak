@@ -38,8 +38,23 @@ import {
   ShieldCheck,
   RefreshCw
 } from 'lucide-react';
+import { getPlanStatus } from '@/app/actions/user-actions';
+import { useRouter } from 'next/navigation';
 
 export default function PaymentPage() {
+  const router = useRouter();
+
+  // Check plan status
+  useState(() => {
+    const checkPlan = async () => {
+      const res = await getPlanStatus();
+      if (res.success && !res.isPro) {
+        router.push('/dashboard/upgrade');
+      }
+    };
+    checkPlan();
+  });
+
   // --- STATES (SEMUA DATA TETAP TERJAGA) ---
   const [view, setView] = useState<'main' | 'logic'>('main');
   const [isConfigOpen, setIsConfigOpen] = useState(false);

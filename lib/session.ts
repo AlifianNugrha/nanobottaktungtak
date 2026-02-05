@@ -9,12 +9,12 @@ export async function getCurrentUser() {
 
         if (!user) return null;
 
-        // Optional: Fetch detail from Prisma if needed, but for ID it's enough
-        // const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+        const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
 
         return {
             id: user.id,
-            email: user.email
+            email: user.email,
+            role: dbUser?.role || 'USER'
         };
     } catch (error) {
         console.error("Error getting current user:", error);

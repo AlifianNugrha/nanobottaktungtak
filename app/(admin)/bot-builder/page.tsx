@@ -121,7 +121,7 @@ export default function BotBuilderPage() {
               {bots.length} / {limit > 900 ? '∞' : limit} Used
             </span>
             {bots.length >= limit && (
-              <Link href="/admin/pricing" className="ml-2 text-[10px] font-black text-[#1E90FF] uppercase tracking-wider hover:underline flex items-center gap-1 animate-pulse">
+              <Link href="/dashboard/upgrade" className="ml-2 text-[10px] font-black text-[#1E90FF] uppercase tracking-wider hover:underline flex items-center gap-1 animate-pulse">
                 Upgrade to Pro <Sparkles className="w-3 h-3" />
               </Link>
             )}

@@ -8,11 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
-import { Plus, Megaphone, Calendar, ChevronRight, Users } from 'lucide-react';
+import { Plus, Megaphone, Calendar, ChevronRight, Users, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { useLanguage } from '@/components/language-provider';
+import { deleteCampaign } from '@/app/actions/campaign-actions';
 
 export function CampaignListClient({ campaigns, userId }: { campaigns: any[], userId: string }) {
     const { t } = useLanguage();
@@ -41,6 +42,24 @@ export function CampaignListClient({ campaigns, userId }: { campaigns: any[], us
             toast.error('Error: ' + result.error);
         }
         setIsLoading(false);
+    }
+
+    async function handleDelete(campaignId: string, campaignName: string, e: React.MouseEvent) {
+        e.preventDefault(); // Prevent navigation to detail page
+        e.stopPropagation();
+
+        if (!confirm(`Delete campaign "${campaignName}"? This action cannot be undone.`)) {
+            return;
+        }
+
+        const result = await deleteCampaign(campaignId);
+
+        if (result.success) {
+            toast.success(t('Campaign deleted successfully!'));
+            router.refresh(); // Refresh the page to update the list
+        } else {
+            toast.error('Error: ' + result.error);
+        }
     }
 
     return (
@@ -107,7 +126,16 @@ export function CampaignListClient({ campaigns, userId }: { campaigns: any[], us
                                 <CardTitle className="text-sm font-medium">
                                     {camp.name}
                                 </CardTitle>
-                                <Megaphone className="h-4 w-4 text-muted-foreground group-hover:text-[#1E90FF]" />
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={(e) => handleDelete(camp.id, camp.name, e)}
+                                        className="p-1.5 rounded-lg hover:bg-red-50 text-muted-foreground hover:text-red-600 transition-colors"
+                                        title="Delete campaign"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </button>
+                                    <Megaphone className="h-4 w-4 text-muted-foreground group-hover:text-[#1E90FF]" />
+                                </div>
                             </CardHeader>
                             <CardContent>
                                 <div className="text-xs text-muted-foreground mt-2 line-clamp-2 italic bg-slate-50 p-2 rounded border border-slate-100 mb-4">

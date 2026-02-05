@@ -17,6 +17,11 @@ export default async function CampaignPage() {
         redirect('/login');
     }
 
+    const isPro = user.role === 'PRO_USER' || user.role === 'ADMIN';
+    if (!isPro) {
+        redirect('/dashboard/upgrade');
+    }
+
     const campaigns = await getCampaigns(user.id);
 
     return (

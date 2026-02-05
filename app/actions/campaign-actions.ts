@@ -121,3 +121,21 @@ export async function launchCampaign(campaignId: string) {
         return { success: false };
     }
 }
+
+/**
+ * Delete a campaign
+ */
+export async function deleteCampaign(campaignId: string) {
+    try {
+        // Delete campaign (recipients will be cascade deleted due to schema)
+        await (prisma as any).campaign.delete({
+            where: { id: campaignId }
+        });
+
+        revalidatePath('/admin/campaign');
+        return { success: true };
+    } catch (error: any) {
+        console.error('Error deleting campaign:', error);
+        return { success: false, error: error.message };
+    }
+}

@@ -117,3 +117,20 @@ export async function getUsers() {
         return { success: false, error: "Failed to fetch users" };
     }
 }
+
+export async function getPlanStatus() {
+    try {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) return { success: false, isPro: false };
+
+        const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+        const isPro = dbUser?.role === 'PRO_USER' || dbUser?.role === 'ADMIN';
+
+        return { success: true, isPro };
+    } catch (error) {
+        console.error("Error checking plan status:", error);
+        return { success: false, isPro: false };
+    }
+}

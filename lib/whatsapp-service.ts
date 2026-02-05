@@ -25,6 +25,60 @@ export interface WhatsAppSession {
 
 const activeSessions = new Map<string, WhatsAppSession>();
 
+// Flag to track if sessions have been restored
+let sessionsRestored = false;
+
+/**
+ * Restore all existing WhatsApp sessions from database on server startup
+ * This ensures sessions persist across Railway deployments
+ */
+export async function restoreExistingSessions() {
+    if (sessionsRestored) {
+        console.log('[Session Restore] Already restored, skipping...');
+        return;
+    }
+
+    try {
+        console.log('[Session Restore] Starting session restoration...');
+
+        // Get all integrations that have WhatsApp sessions in database
+        const sessions = await prisma.whatsAppSession.findMany({
+            select: {
+                sessionId: true,
+                updatedAt: true
+            }
+        });
+
+        console.log(`[Session Restore] Found ${sessions.length} sessions in database`);
+
+        // Restore each session
+        for (const session of sessions) {
+            try {
+                console.log(`[Session Restore] Restoring session: ${session.sessionId}`);
+
+                // Check if session is already active
+                if (activeSessions.has(session.sessionId)) {
+                    console.log(`[Session Restore] Session ${session.sessionId} already active, skipping...`);
+                    continue;
+                }
+
+                // Recreate the WhatsApp connection
+                await createWhatsAppSession(session.sessionId);
+
+                // Small delay to prevent overwhelming the server
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            } catch (error) {
+                console.error(`[Session Restore] Failed to restore session ${session.sessionId}:`, error);
+            }
+        }
+
+        sessionsRestored = true;
+        console.log('[Session Restore] Session restoration complete');
+    } catch (error) {
+        console.error('[Session Restore] Error during session restoration:', error);
+    }
+}
+
 // Database-backed auth state (replaces useMultiFileAuthState)
 async function useDatabaseAuthState(store: DatabaseSessionStore, savedState: any) {
     let creds: AuthenticationCreds;
@@ -76,28 +130,102 @@ export async function createWhatsAppSession(sessionId: string) {
     activeSessions.set(sessionId, session);
 
     // QR Code handler
-    sock.ev.on('connection.update', (update: any) => {
+    sock.ev.on('connection.update', async (update: any) => {
         const { connection, lastDisconnect, qr } = update;
+
+        console.log(`[Connection Update] Session ${sessionId}:`, {
+            connection,
+            qr: qr ? 'QR Generated' : 'No QR',
+            lastDisconnect: lastDisconnect ? 'Yes' : 'No'
+        });
 
         if (qr) {
             session.qr = qr;
             session.status = 'connecting';
+
+            // Update integration status to 'connecting'
+            try {
+                const exists = await prisma.integration.findUnique({ where: { id: sessionId } });
+                if (!exists) {
+                    console.log(`[Session ${sessionId}] Integration missing, stopping session.`);
+                    activeSessions.delete(sessionId);
+                    sock.logout();
+                    return;
+                }
+
+                await prisma.integration.update({
+                    where: { id: sessionId },
+                    data: { status: 'connecting' }
+                });
+                console.log(`[Session ${sessionId}] Status updated to 'connecting' in database`);
+            } catch (error: any) {
+                console.error(`[Session ${sessionId}] Failed to update status:`, error.message);
+            }
         }
 
         if (connection === 'close') {
             const shouldReconnect = (lastDisconnect?.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut;
 
+            console.log(`[Session ${sessionId}] Connection closed. Should reconnect:`, shouldReconnect);
+
             if (shouldReconnect) {
-                console.log('Reconnecting WhatsApp session:', sessionId);
-                createWhatsAppSession(sessionId);
+                console.log(`[Session ${sessionId}] Attempting to reconnect...`);
+
+                // Update status to 'disconnected' temporarily
+                try {
+                    const exists = await prisma.integration.findUnique({ where: { id: sessionId } });
+                    if (!exists) {
+                        console.log(`[Session ${sessionId}] Integration record gone, stopping reconnect loop.`);
+                        activeSessions.delete(sessionId);
+                        return;
+                    }
+
+                    await prisma.integration.update({
+                        where: { id: sessionId },
+                        data: { status: 'disconnected' }
+                    });
+                } catch (error: any) {
+                    console.error(`[Session ${sessionId}] Failed to update status:`, error.message);
+                    if (error.code === 'P2025') {
+                        activeSessions.delete(sessionId);
+                        return;
+                    }
+                }
+
+                // Wait a bit before reconnecting
+                setTimeout(() => {
+                    createWhatsAppSession(sessionId);
+                }, 3000);
             } else {
+                console.log(`[Session ${sessionId}] Logged out, not reconnecting`);
                 session.status = 'disconnected';
                 activeSessions.delete(sessionId);
+
+                // Update integration status to 'disconnected'
+                try {
+                    await prisma.integration.update({
+                        where: { id: sessionId },
+                        data: { status: 'disconnected' }
+                    });
+                } catch (error) {
+                    console.error(`[Session ${sessionId}] Failed to update status:`, error);
+                }
             }
         } else if (connection === 'open') {
             session.status = 'connected';
             session.qr = undefined;
-            console.log('WhatsApp session connected:', sessionId);
+            console.log(`[Session ${sessionId}] ✓ WhatsApp connected successfully!`);
+
+            // Update integration status to 'connected'
+            try {
+                await prisma.integration.update({
+                    where: { id: sessionId },
+                    data: { status: 'connected' }
+                });
+                console.log(`[Session ${sessionId}] Status updated to 'connected' in database`);
+            } catch (error) {
+                console.error(`[Session ${sessionId}] Failed to update status:`, error);
+            }
         }
     });
 

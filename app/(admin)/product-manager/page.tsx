@@ -201,7 +201,7 @@ export default function ProductManagerPage() {
                     {products.length} / {limit > 900 ? '∞' : limit} Used
                   </span>
                   {products.length >= limit && (
-                    <Link href="/admin/pricing" className="ml-2 text-[10px] font-black text-[#1E90FF] uppercase tracking-wider hover:underline flex items-center gap-1 animate-pulse">
+                    <Link href="/dashboard/upgrade" className="ml-2 text-[10px] font-black text-[#1E90FF] uppercase tracking-wider hover:underline flex items-center gap-1 animate-pulse">
                       Upgrade to Pro <Sparkles className="w-3 h-3" />
                     </Link>
                   )}
@@ -272,7 +272,7 @@ export default function ProductManagerPage() {
                 <h3 className="text-2xl font-black italic uppercase tracking-tighter mb-1">Unlock Unlimited Products! 🚀</h3>
                 <p className="text-blue-100 text-sm font-medium opacity-90">Upgrade to PRO plan to upload unlimited products and boost your sales.</p>
               </div>
-              <Button onClick={() => window.location.href = '/admin/pricing'} className="relative z-10 bg-white text-blue-600 font-bold hover:bg-gray-50 shadow-lg border-2 border-transparent hover:border-blue-200">
+              <Button onClick={() => window.location.href = '/dashboard/upgrade'} className="relative z-10 bg-white text-blue-600 font-bold hover:bg-gray-50 shadow-lg border-2 border-transparent hover:border-blue-200">
                 Upgrade Now ⚡
               </Button>
               {/* Decoration */}

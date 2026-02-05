@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from "@/lib/utils";
@@ -81,25 +81,37 @@ export default function IntegrationPage() {
   }, []);
 
   /* FILTER BOT LIST TO ONLY SHOW INTEGRATED BOTS IN MAIN LIST */
-  const fetchIntegrations = async () => {
+  const fetchIntegrations = useCallback(async () => {
     setIsLoading(true);
-    const res = await getBots();
-    if (res.success) {
-      // Filter: Only show bots that have an integrationId OR are platform-specific (created via integration page)
-      const integratedBots = (res.data || []).filter((b: any) => b.integrationId || b.config?.platform === 'WhatsApp' || b.config?.platform === 'Website');
-      setIntegrations(integratedBots);
+    try {
+      const res = await getBots();
+      if (res.success) {
+        // Filter: Only show bots that have an integrationId OR are platform-specific (created via integration page)
+        const integratedBots = (res.data || []).filter((b: any) => b.integrationId || b.config?.platform === 'WhatsApp' || b.config?.platform === 'Website');
+        setIntegrations(integratedBots);
 
-      // Store ALL bots separately for the dropdown selection
-      (window as any).allBots = res.data || [];
+        // Store ALL bots separately for the dropdown selection
+        (window as any).allBots = res.data || [];
+      }
+    } catch (error) {
+      console.error('[Integration] Error fetching bots:', error);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
-  };
+  }, []);
 
   /* OLD DIRECT CONNECT LOGIC REMOVED/SIMPLIFIED - NOW HANDLED VIA SETTINGS */
   const handleConnectWhatsApp = async (specificBotId?: string) => {
     // If we call this, it means we want to Generate QR for a specific bot (or new one if not passed)
     // Currently used by Settings Button logic mainly
     setIsSaving(true);
+
+    // Clear any existing polling first
+    if (qrPolling) {
+      clearInterval(qrPolling);
+      setQrPolling(null);
+    }
+
     try {
       const response = await fetch('/api/whatsapp/session', {
         method: 'POST',
@@ -116,25 +128,47 @@ export default function IntegrationPage() {
         setSessionId(data.sessionId);
         setConfigStep('qr');
 
-        // Start polling for QR code
+        // Start polling for QR code with timeout
+        let pollCount = 0;
+        const maxPolls = 60; // Max 2 minutes (60 * 2 seconds)
+
         const interval = setInterval(async () => {
-          const qrResponse = await fetch(`/api/whatsapp/session?sessionId=${data.sessionId}`);
-          const qrData = await qrResponse.json();
+          pollCount++;
 
-          if (qrData.qr) {
-            const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrData.qr)}`;
-            setQrCodeUrl(qrImageUrl);
-          }
-
-          if (qrData.status === 'connected') {
+          // Stop polling after max attempts
+          if (pollCount > maxPolls) {
             clearInterval(interval);
             setQrPolling(null);
-            setConfigStep('success');
-            fetchIntegrations(); // Refresh list to update status
+            console.log('[QR Polling] Timeout reached, stopping...');
+            return;
+          }
+
+          try {
+            const qrResponse = await fetch(`/api/whatsapp/session?sessionId=${data.sessionId}`);
+            const qrData = await qrResponse.json();
+
+            console.log(`[QR Polling] Attempt ${pollCount}:`, qrData.status);
+
+            if (qrData.qr) {
+              const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrData.qr)}`;
+              setQrCodeUrl(qrImageUrl);
+            }
+
+            if (qrData.status === 'connected') {
+              console.log('[QR Polling] Connected! Stopping polling...');
+              clearInterval(interval);
+              setQrPolling(null);
+              setConfigStep('success');
+              fetchIntegrations(); // Refresh list to update status
+            }
+          } catch (error) {
+            console.error('[QR Polling] Error:', error);
           }
         }, 2000);
 
         setQrPolling(interval);
+      } else {
+        alert(data.error || 'Failed to create WhatsApp session');
       }
     } catch (error) {
       console.error('Error connecting WhatsApp:', error);
@@ -160,9 +194,17 @@ export default function IntegrationPage() {
   const resetModal = (open: boolean) => {
     setIsModalOpen(open);
     if (!open) {
+      // Stop QR polling immediately when modal closes
+      if (qrPolling) {
+        console.log('[Modal] Closing - stopping QR polling...');
+        clearInterval(qrPolling);
+        setQrPolling(null);
+      }
+
       setTimeout(() => {
         setConfigStep('input');
         setQrCodeUrl(null);
+        setSessionId(null);
         fetchIntegrations();
       }, 300);
     }
@@ -172,6 +214,27 @@ export default function IntegrationPage() {
     if (confirm('Disconnect integration?')) {
       const res = await deleteBot(id);
       if (res.success) fetchIntegrations();
+    }
+  };
+
+  const handleCleanup = async () => {
+    if (confirm('Clean up stuck WhatsApp integrations? This will delete all integrations stuck in "connecting" status for more than 5 minutes.')) {
+      try {
+        const response = await fetch('/api/whatsapp/cleanup', {
+          method: 'DELETE'
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          alert(`✓ Cleaned up ${data.deletedCount} stuck integration(s)`);
+          fetchIntegrations();
+        } else {
+          alert('Failed to cleanup: ' + data.error);
+        }
+      } catch (error) {
+        console.error('Cleanup error:', error);
+        alert('Failed to cleanup integrations');
+      }
     }
   };
 
@@ -191,29 +254,41 @@ export default function IntegrationPage() {
           <p className="text-muted-foreground text-sm">Manage your chatbot connections and live channels.</p>
         </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button className="bg-primary hover:bg-primary/90 text-white gap-2 shadow-lg shadow-primary/20 h-11 px-6 font-bold rounded-xl">
-              <Plus className="w-4 h-4" />
-              Add Connection
-              <ChevronDown className="w-4 h-4 opacity-50" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 p-2 rounded-2xl">
-            <DropdownMenuLabel className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Select Platform</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {platforms.map((p) => (
-              <DropdownMenuItem
-                key={p.id}
-                onClick={() => { setSelectedPlatform(p.label); setIsModalOpen(true); }}
-                className="gap-3 cursor-pointer py-2.5 rounded-xl transition-colors"
-              >
-                <p.icon className={cn("w-4 h-4", p.color)} />
-                <span className="font-semibold text-sm">{p.label}</span>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-2">
+          {/* Cleanup Button */}
+          <Button
+            variant="outline"
+            onClick={handleCleanup}
+            className="gap-2 h-11 px-4 rounded-xl border-orange-200 text-orange-600 hover:bg-orange-50"
+          >
+            <RefreshCw className="w-4 h-4" />
+            <span className="hidden sm:inline">Cleanup</span>
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="bg-primary hover:bg-primary/90 text-white gap-2 shadow-lg shadow-primary/20 h-11 px-6 font-bold rounded-xl">
+                <Plus className="w-4 h-4" />
+                Add Connection
+                <ChevronDown className="w-4 h-4 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 p-2 rounded-2xl">
+              <DropdownMenuLabel className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Select Platform</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {platforms.map((p) => (
+                <DropdownMenuItem
+                  key={p.id}
+                  onClick={() => { setSelectedPlatform(p.label); setIsModalOpen(true); }}
+                  className="gap-3 cursor-pointer py-2.5 rounded-xl transition-colors"
+                >
+                  <p.icon className={cn("w-4 h-4", p.color)} />
+                  <span className="font-semibold text-sm">{p.label}</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       <div className="space-y-4">

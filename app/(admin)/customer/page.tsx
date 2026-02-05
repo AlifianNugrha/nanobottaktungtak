@@ -54,6 +54,9 @@ export default function CustomerPage() {
     const res = await getCustomers();
     if (res.success && res.data) {
       setCustomers(res.data);
+    } else if (res.error === "Pro subscription required") {
+      window.location.href = '/dashboard/upgrade';
+      return;
     }
     setIsLoading(false);
   };

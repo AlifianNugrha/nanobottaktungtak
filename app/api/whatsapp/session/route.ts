@@ -14,16 +14,64 @@ export async function POST(req: NextRequest) {
 
         const { name, botId } = await req.json();
 
-        // Create integration record
-        const integration = await prisma.integration.create({
-            data: {
-                platform: 'WhatsApp',
-                name: name || 'WhatsApp Bot',
-                status: 'connecting',
+        // CLEANUP: Delete old stuck 'connecting' integrations for this user
+        // This prevents accumulation of failed connection attempts
+        const oldConnectingIntegrations = await prisma.integration.findMany({
+            where: {
                 userId: user.id,
-                config: {}
+                platform: 'WhatsApp',
+                status: 'connecting',
+                createdAt: {
+                    // Delete integrations stuck in 'connecting' for more than 10 minutes
+                    lt: new Date(Date.now() - 10 * 60 * 1000)
+                }
             }
         });
+
+        if (oldConnectingIntegrations.length > 0) {
+            console.log(`[Cleanup] Deleting ${oldConnectingIntegrations.length} stuck 'connecting' integrations`);
+            await prisma.integration.deleteMany({
+                where: {
+                    id: {
+                        in: oldConnectingIntegrations.map(i => i.id)
+                    }
+                }
+            });
+        }
+
+        // Check if there's already a WhatsApp integration for this bot
+        let integration;
+        if (botId) {
+            const existingBot = await prisma.bot.findUnique({
+                where: { id: botId },
+                include: { integration: true }
+            });
+
+            if (existingBot?.integration && existingBot.integration.platform === 'WhatsApp') {
+                console.log(`[Reuse] Using existing integration ${existingBot.integration.id} for bot ${botId}`);
+                integration = existingBot.integration;
+
+                // Update status back to 'connecting' to regenerate QR
+                await prisma.integration.update({
+                    where: { id: integration.id },
+                    data: { status: 'connecting' }
+                });
+            }
+        }
+
+        // Create new integration only if no existing one found
+        if (!integration) {
+            integration = await prisma.integration.create({
+                data: {
+                    platform: 'WhatsApp',
+                    name: name || 'WhatsApp Bot',
+                    status: 'connecting',
+                    userId: user.id,
+                    config: {}
+                }
+            });
+            console.log(`[Create] Created new integration ${integration.id}`);
+        }
 
         // 1. If explicit botId provided, link to valid bot
         if (botId) {

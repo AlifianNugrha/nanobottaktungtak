@@ -43,7 +43,7 @@ export function Sidebar({ isPro, userName, role, userEmail }: { isPro: boolean; 
     {
       category: t('Core'),
       items: [
-        { href: '/admin/inbox', label: t('Live Chat / Inbox'), icon: MessageSquare },
+        { href: '/admin/inbox', label: t('Live Chat / Inbox'), icon: MessageSquare, isLocked: !isPro },
         { href: '/agent', label: t('Agent'), icon: Zap },
         { href: '/admin/knowledge', label: t('Knowledge Base'), icon: BookOpen },
         { href: '/bot-builder', label: t('Bot Builder'), icon: Bot },
@@ -60,7 +60,7 @@ export function Sidebar({ isPro, userName, role, userEmail }: { isPro: boolean; 
     {
       category: t('Sales & Finance'),
       items: [
-        { href: '/admin/campaign', label: t('Campaign / Broadcast'), icon: Megaphone },
+        { href: '/admin/campaign', label: t('Campaign / Broadcast'), icon: Megaphone, isLocked: !isPro },
         { href: '/sales-monitoring', label: t('Sales Monitoring'), icon: ShoppingCart },
         { href: '/payment', label: t('Payments'), icon: CreditCard, isLocked: !isPro },
       ],
@@ -138,7 +138,7 @@ export function Sidebar({ isPro, userName, role, userEmail }: { isPro: boolean; 
                   return (
                     <Link
                       key={href}
-                      href={isLocked ? '/admin/pricing' : href}
+                      href={isLocked ? '/dashboard/upgrade' : href}
                       onClick={() => setIsOpen(false)}
                       scroll={false}
                       className={cn(

@@ -18,6 +18,11 @@ export default async function InboxPage() {
         redirect('/login');
     }
 
+    const isPro = user.role === 'PRO_USER' || user.role === 'ADMIN';
+    if (!isPro) {
+        redirect('/dashboard/upgrade');
+    }
+
     // Fetch initial conversations on server side
     const conversations = await getInboxConversations(user.id);
 

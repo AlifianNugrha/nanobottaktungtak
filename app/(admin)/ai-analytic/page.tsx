@@ -1,5 +1,3 @@
-'use client';
-
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,8 +14,18 @@ import {
   Lightbulb,
   PieChart
 } from 'lucide-react';
+import { getAIAnalytics } from '@/app/actions/ai-analytics-actions';
+import { redirect } from 'next/navigation';
 
-export default function AIAnalyticsPage() {
+export default async function AIAnalyticsPage() {
+  // Fetch real analytics data
+  const result = await getAIAnalytics();
+
+  if (!result.success) {
+    redirect('/login');
+  }
+
+  const { metrics, funnel, topIntents, aiInsight } = result.data!;
   return (
     <div className="max-w-6xl mx-auto w-full space-y-8 px-4 pb-20">
 
@@ -44,10 +52,10 @@ export default function AIAnalyticsPage() {
       {/* TOP METRICS: AI PERFORMANCE */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { label: 'Chat Resolution', value: '89.4%', icon: Zap, color: 'text-orange-500', bg: 'bg-orange-50' },
-          { label: 'Avg. Sentiment', value: 'Positive', icon: Smile, color: 'text-green-600', bg: 'bg-green-50' },
-          { label: 'Conversion Rate', value: '12.5%', icon: TrendingUp, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { label: 'AI Messages', value: '1.2k', icon: MessageSquare, color: 'text-purple-600', bg: 'bg-purple-50' },
+          { label: 'Chat Resolution', value: metrics.resolutionRate, icon: Zap, color: 'text-orange-500', bg: 'bg-orange-50' },
+          { label: 'Avg. Sentiment', value: metrics.avgSentiment, icon: Smile, color: 'text-green-600', bg: 'bg-green-50' },
+          { label: 'Conversion Rate', value: metrics.conversionRate, icon: TrendingUp, color: 'text-blue-600', bg: 'bg-blue-50' },
+          { label: 'AI Messages', value: metrics.totalMessages, icon: MessageSquare, color: 'text-purple-600', bg: 'bg-purple-50' },
         ].map((stat, i) => (
           <Card key={i} className="p-5 border-border shadow-sm flex items-center gap-4">
             <div className={`w-10 h-10 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center shrink-0`}>
@@ -77,12 +85,7 @@ export default function AIAnalyticsPage() {
 
           {/* Funnel Visualization */}
           <div className="space-y-4 py-4">
-            {[
-              { label: 'Total Conversations', value: '1,240', width: 'w-full', color: 'bg-primary' },
-              { label: 'Leads Identified', value: '450', width: 'w-[65%]', color: 'bg-primary/70' },
-              { label: 'Payment Link Generated', value: '180', width: 'w-[40%]', color: 'bg-primary/50' },
-              { label: 'Closing / Paid', value: '82', width: 'w-[25%]', color: 'bg-primary/30' },
-            ].map((step, i) => (
+            {funnel.map((step, i) => (
               <div key={i} className="space-y-2">
                 <div className="flex justify-between text-xs font-bold">
                   <span>{step.label}</span>
@@ -103,10 +106,10 @@ export default function AIAnalyticsPage() {
               <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
                 <Lightbulb className="w-5 h-5 text-yellow-400" />
               </div>
-              <h3 className="font-bold text-lg leading-tight italic">"Pelanggan paling sering menanyakan stok Produk X pada malam hari."</h3>
+              <h3 className="font-bold text-lg leading-tight italic">"{aiInsight.title}"</h3>
               <div className="pt-2">
                 <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
-                  <span className="text-primary font-bold">Rekomendasi AI:</span> Aktifkan notifikasi stok rendah untuk Produk X dan buat promo khusus jam malam.
+                  <span className="text-primary font-bold">Rekomendasi AI:</span> {aiInsight.recommendation}
                 </p>
               </div>
             </div>
@@ -118,16 +121,11 @@ export default function AIAnalyticsPage() {
           <Card className="p-6 border-border shadow-sm">
             <h4 className="text-xs font-black uppercase text-muted-foreground tracking-widest mb-4">Top Customer Intents</h4>
             <div className="space-y-4">
-              {[
-                { intent: 'Check Stock', count: 420, pct: '45%' },
-                { intent: 'Ask Discount', count: 280, pct: '30%' },
-                { intent: 'Shipping Fee', count: 120, pct: '15%' },
-                { intent: 'Complaints', count: 40, pct: '5%' },
-              ].map((item, i) => (
+              {topIntents.map((item, i) => (
                 <div key={i} className="flex items-center justify-between group">
                   <div className="space-y-1">
                     <p className="text-xs font-bold">{item.intent}</p>
-                    <p className="text-[10px] text-muted-foreground">{item.count} users</p>
+                    <p className="text-[10px] text-muted-foreground">{item.count} messages</p>
                   </div>
                   <span className="text-xs font-mono font-bold text-primary bg-primary/5 px-2 py-1 rounded-lg">
                     {item.pct}
