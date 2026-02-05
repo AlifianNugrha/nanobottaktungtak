@@ -134,19 +134,20 @@ export async function createWhatsAppSession(sessionId: string) {
     const savedState = await sessionStore.loadState();
     const { state, saveCreds } = await useDatabaseAuthState(sessionStore, savedState);
 
-    const { version } = await fetchLatestBaileysVersion();
+    // Remove explicit version fetch to use the library's stable default
+    // const { version } = await fetchLatestBaileysVersion();
 
     const sock = makeWASocket({
-        version,
+        // version, // Let library use stable internal default
         logger: pino({ level: 'silent' }),
         printQRInTerminal: false,
         auth: {
             creds: state.creds,
             keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' })),
         },
-        // Updated browser identity to be more "standard"
-        browser: ['NanoArtif', 'Chrome', '110.0.0'],
-        connectTimeoutMs: 60000, // 60 seconds timeout
+        // Using a highly standard Windows/Chrome fingerprint to avoid "Check Internet" error on phone
+        browser: ['Windows', 'Chrome', '114.0.5735.110'],
+        connectTimeoutMs: 60000,
         retryRequestDelayMs: 5000,
         keepAliveIntervalMs: 30000,
     });
@@ -236,10 +237,10 @@ export async function createWhatsAppSession(sessionId: string) {
                     }
                 }
 
-                // Wait a bit before reconnecting
+                // Wait longer before reconnecting to let resources clear
                 setTimeout(() => {
                     createWhatsAppSession(sessionId);
-                }, 5000);
+                }, 10000);
             } else {
                 console.log(`[Session ${sessionId}] Logged out, not reconnecting`);
                 session.status = 'disconnected';
