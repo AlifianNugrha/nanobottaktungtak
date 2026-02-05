@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,19 +26,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-// Data Dummy
-const INITIAL_CUSTOMERS = [
-  { id: '1', name: 'Budi Santoso', email: 'budi@example.com', phone: '08123456789', status: 'Active', joined: '2024-01-15' },
-  { id: '2', name: 'Siti Aminah', email: 'siti@example.com', phone: '08577123456', status: 'Lead', joined: '2024-02-10' },
-  { id: '3', name: 'Andi Wijaya', email: 'andi@gmail.com', phone: '08991234123', status: 'Inactive', joined: '2023-12-05' },
-];
+import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from '@/app/actions/customer-actions';
+import { format } from 'date-fns';
 
 export default function CustomerPage() {
   const [view, setView] = useState<'list' | 'add' | 'edit'>('list');
-  const [customers, setCustomers] = useState(INITIAL_CUSTOMERS);
+  const [customers, setCustomers] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // State Form
   const [formData, setFormData] = useState({
@@ -49,30 +45,55 @@ export default function CustomerPage() {
     status: 'Lead'
   });
 
-  // --- LOGIKA ---
-  const handleSave = async () => {
-    if (!formData.name || !formData.email) return alert("Nama dan Email wajib diisi!");
-    setIsSaving(true);
-    await new Promise(r => setTimeout(r, 800));
+  useEffect(() => {
+    loadCustomers();
+  }, []);
 
-    if (view === 'edit') {
-      setCustomers(customers.map(c => c.id === formData.id ? { ...c, ...formData } : c));
-    } else {
-      setCustomers([{ ...formData, id: Date.now().toString(), joined: new Date().toISOString().split('T')[0] }, ...customers]);
+  const loadCustomers = async () => {
+    setIsLoading(true);
+    const res = await getCustomers();
+    if (res.success && res.data) {
+      setCustomers(res.data);
     }
-    setIsSaving(false);
-    setView('list');
+    setIsLoading(false);
   };
 
-  const deleteCustomer = (id: string) => {
+  // --- LOGIKA ---
+  const handleSave = async () => {
+    if (!formData.name) return alert("Nama wajib diisi!");
+    setIsSaving(true);
+
+    let res;
+    if (view === 'edit') {
+      res = await updateCustomer(formData.id, formData);
+    } else {
+      res = await createCustomer(formData);
+    }
+
+    setIsSaving(false);
+
+    if (res.success) {
+      setView('list');
+      loadCustomers(); // Reload data
+    } else {
+      alert("Gagal menyimpan: " + res.error);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
     if (confirm('Hapus data pelanggan ini?')) {
-      setCustomers(customers.filter(c => c.id !== id));
+      const res = await deleteCustomer(id);
+      if (res.success) {
+        loadCustomers();
+      } else {
+        alert("Gagal menghapus");
+      }
     }
   };
 
   const filteredCustomers = customers.filter(c =>
     c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.email.toLowerCase().includes(searchQuery.toLowerCase())
+    (c.email && c.email.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (
@@ -97,7 +118,7 @@ export default function CustomerPage() {
         </div>
 
         {view === 'list' && (
-          <Button onClick={() => { setFormData({ id: '', name: '', email: '', phone: '', status: 'Lead' }); setView('add'); }} className="bg-primary hover:bg-primary/90 text-white gap-2 h-11 px-6 font-bold shadow-lg shadow-primary/20 rounded-xl">
+          <Button onClick={() => { setFormData({ id: '', name: '', email: '', phone: '', status: 'Lead' }); setView('add'); }} className="bg-[#1E90FF] hover:bg-[#187bcd] text-white gap-2 h-11 px-6 font-bold shadow-lg shadow-[#1E90FF]/20 rounded-xl">
             <UserPlus className="w-4 h-4" /> Add Customer
           </Button>
         )}
@@ -140,64 +161,75 @@ export default function CustomerPage() {
           </div>
 
           {/* Customer Table/List */}
-          <Card className="overflow-hidden border-border shadow-sm bg-white">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead className="bg-gray-50 border-b border-border">
-                  <tr>
-                    <th className="px-6 py-4 text-[10px] font-bold uppercase text-muted-foreground">Customer</th>
-                    <th className="px-6 py-4 text-[10px] font-bold uppercase text-muted-foreground">Contact</th>
-                    <th className="px-6 py-4 text-[10px] font-bold uppercase text-muted-foreground">Status</th>
-                    <th className="px-6 py-4 text-[10px] font-bold uppercase text-muted-foreground">Joined Date</th>
-                    <th className="px-6 py-4 text-right"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {filteredCustomers.map((c) => (
-                    <tr key={c.id} className="hover:bg-gray-50/50 transition-colors group">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center font-bold text-primary border border-border">
-                            {c.name.charAt(0)}
-                          </div>
-                          <span className="font-bold text-sm">{c.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Mail className="w-3 h-3" /> {c.email}
-                          </div>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Phone className="w-3 h-3" /> {c.phone}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${c.status === 'Active' ? 'bg-green-100 text-green-700' :
-                          c.status === 'Lead' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
-                          }`}>
-                          {c.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-xs text-muted-foreground font-medium">
-                        {c.joined}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button variant="ghost" size="icon" onClick={() => { setFormData(c); setView('edit'); }} className="h-8 w-8 text-muted-foreground hover:text-primary">
-                            <Settings2 className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => deleteCustomer(c.id)} className="h-8 w-8 text-muted-foreground hover:text-destructive">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </td>
+          <Card className="overflow-hidden border-border shadow-sm bg-white min-h-[300px]">
+            {isLoading ? (
+              <div className="flex justify-center items-center h-full py-20">
+                <Loader2 className="w-8 h-8 animate-spin text-[#1E90FF]" />
+              </div>
+            ) : filteredCustomers.length === 0 ? (
+              <div className="flex flex-col justify-center items-center h-full py-20 text-muted-foreground">
+                <Users className="w-10 h-10 mb-2 opacity-20" />
+                <p>Belum ada data pelanggan.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead className="bg-gray-50 border-b border-border">
+                    <tr>
+                      <th className="px-6 py-4 text-[10px] font-bold uppercase text-muted-foreground">Customer</th>
+                      <th className="px-6 py-4 text-[10px] font-bold uppercase text-muted-foreground">Contact</th>
+                      <th className="px-6 py-4 text-[10px] font-bold uppercase text-muted-foreground">Status</th>
+                      <th className="px-6 py-4 text-[10px] font-bold uppercase text-muted-foreground">Joined Date</th>
+                      <th className="px-6 py-4 text-right"></th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {filteredCustomers.map((c) => (
+                      <tr key={c.id} className="hover:bg-gray-50/50 transition-colors group">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center font-bold text-[#1E90FF] border border-border">
+                              {c.name.charAt(0)}
+                            </div>
+                            <span className="font-bold text-sm">{c.name}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <Mail className="w-3 h-3" /> {c.email || '-'}
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <Phone className="w-3 h-3" /> {c.phone || '-'}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${c.status === 'Active' ? 'bg-green-100 text-green-700' :
+                            c.status === 'Lead' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
+                            }`}>
+                            {c.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-xs text-muted-foreground font-medium">
+                          {format(new Date(c.createdAt), 'dd MMM yyyy')}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button variant="ghost" size="icon" onClick={() => { setFormData(c); setView('edit'); }} className="h-8 w-8 text-muted-foreground hover:text-[#1E90FF]">
+                              <Settings2 className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleDelete(c.id)} className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </Card>
         </div>
       ) : (
@@ -211,6 +243,7 @@ export default function CustomerPage() {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="John Doe" className="h-11 rounded-xl bg-gray-50"
+                  required
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -245,7 +278,7 @@ export default function CustomerPage() {
             </div>
 
             <div className="flex gap-4 pt-4 border-t border-border">
-              <Button onClick={handleSave} disabled={isSaving} className="flex-1 h-12 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20">
+              <Button onClick={handleSave} disabled={isSaving} className="flex-1 h-12 bg-[#1E90FF] hover:bg-[#187bcd] text-white font-bold rounded-xl shadow-lg shadow-[#1E90FF]/20">
                 {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : view === 'edit' ? 'Update Profile' : 'Add to Database'}
               </Button>
               <Button variant="ghost" onClick={() => setView('list')} className="h-12 px-8 font-bold text-muted-foreground">Cancel</Button>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from "@/lib/utils";
@@ -40,43 +40,49 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getBots } from '@/app/actions/bot-actions';
 
-const DUMMY_INTEGRATIONS = [
-  { id: '1', platform: 'WhatsApp', name: 'CS Utama WA', status: 'Active', icon: MessageSquare, color: 'text-green-500' },
-  { id: '2', platform: 'Telegram', name: 'Bot Telegram Nexora', status: 'Active', icon: Send, color: 'text-blue-400' },
-  { id: '3', platform: 'Website', name: 'Landing Page Widget', status: 'Active', icon: Globe, color: 'text-primary' },
-];
-
+// No dummy data needed
 export default function IntegrationPage() {
-  const [integrations] = useState(DUMMY_INTEGRATIONS);
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [activeIntegrationId, setActiveIntegrationId] = useState<string | null>(null);
 
+  // Configuration Steps
   const [configStep, setConfigStep] = useState<'input' | 'qr' | 'success'>('input');
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
+  // Data State
+  const [fetchedIntegrations, setFetchedIntegrations] = useState<any[]>([]);
+  const [allBots, setAllBots] = useState<any[]>([]);
+  const [selectedBotId, setSelectedBotId] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
+
   const platforms = [
     { id: 'wa', label: 'WhatsApp', icon: MessageSquare, color: 'text-green-500' },
-    { id: 'tg', label: 'Telegram', icon: Send, color: 'text-blue-400' },
     { id: 'web', label: 'Website', icon: Globe, color: 'text-primary' },
   ];
 
-  // Ganti fungsi lama dengan ini
-  const handleAction = (type: 'connect' | 'qr') => {
-    setIsSaving(true);
+  // Fetch data on mount
+  useEffect(() => {
+    fetchIntegrations();
+  }, []);
 
-    setTimeout(() => {
-      setIsSaving(false);
-      if (type === 'qr') {
-        // Jika klik Generate QR, baru munculin gambar QR
-        setQrCodeUrl("https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=Nexora-Session-12345");
-        setConfigStep('qr');
-      } else {
-        // Jika klik Connect, langsung ke layar sukses
-        setConfigStep('success');
-      }
-    }, 1500);
+  const fetchIntegrations = async () => {
+    setIsLoading(true);
+    const res = await getBots();
+    if (res.success) {
+      // Filter: Only show bots that have an integrationId OR are platform-specific (created via integration page)
+      const integratedBots = (res.data || []).filter((b: any) => b.integrationId || b.config?.platform === 'WhatsApp' || b.config?.platform === 'Website');
+      setFetchedIntegrations(integratedBots);
+
+      // Store ALL bots separately for the dropdown selection
+      setAllBots(res.data || []);
+    } else {
+      console.error("Failed to fetch bots:", res.error);
+    }
+    setIsLoading(false);
   };
 
   const resetModal = (open: boolean) => {
@@ -85,7 +91,78 @@ export default function IntegrationPage() {
       setTimeout(() => {
         setConfigStep('input');
         setQrCodeUrl(null);
+        setSelectedBotId("");
+        setActiveIntegrationId(null);
       }, 300);
+    }
+  };
+
+  const checkSessionStatus = async (sessionId: string) => {
+    try {
+      const res = await fetch(`/api/whatsapp/session?sessionId=${sessionId}`);
+      const data = await res.json();
+
+      if (data.status === 'connected') {
+        setConfigStep('success');
+      } else if (data.qr) {
+        if (!data.qr.startsWith('http') && !data.qr.startsWith('data:')) {
+          setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(data.qr)}`);
+        } else {
+          setQrCodeUrl(data.qr);
+        }
+        setConfigStep('qr');
+      } else {
+        // If connecting but no QR yet, show the QR page (which has a loader)
+        if (data.status === 'connecting') {
+          setConfigStep('qr');
+        }
+      }
+      setIsSaving(false);
+    } catch (e) {
+      console.error(e);
+      setIsSaving(false);
+    }
+  };
+
+  const handleOpenSettings = async (bot: any) => {
+    if (!bot.integrationId) return;
+
+    setSelectedPlatform('WhatsApp');
+    setActiveIntegrationId(bot.integrationId);
+    setIsModalOpen(true);
+    setIsSaving(true);
+
+    await checkSessionStatus(bot.integrationId);
+  };
+
+
+  const handleCreateSession = async () => {
+    if (!selectedBotId) {
+      alert("Please select a bot first!");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const response = await fetch('/api/whatsapp/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'WhatsApp Connection', botId: selectedBotId })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Success
+        setIsModalOpen(false);
+        fetchIntegrations();
+      } else {
+        alert(`Failed: ${data.error || "Unknown error"}`);
+      }
+    } catch (err: any) {
+      alert("Network or Server Error: " + err.message);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -128,28 +205,57 @@ export default function IntegrationPage() {
       <div className="space-y-4">
         <h3 className="text-sm font-bold text-foreground uppercase tracking-wider ml-1">Active Connections</h3>
         <div className="grid grid-cols-1 gap-4">
-          {integrations.map((item) => (
-            <Card key={item.id} className="p-4 hover:shadow-md transition-all border-border group bg-white">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className={cn("p-3 rounded-2xl bg-gray-50 group-hover:bg-primary/5 transition-colors", item.color)}>
-                    <item.icon className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-foreground">{item.name}</h4>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">{item.platform} • {item.status}</span>
+          {fetchedIntegrations.map((bot) => {
+            // Map DB bot structure to UI structure
+            const platform = (bot.config as any)?.platform;
+            const status = (bot.config as any)?.status || 'Active';
+            const isConnected = status === 'Active' || status === 'Connected';
+            const statusColor = isConnected ? 'bg-emerald-500' : 'bg-gray-300';
+            const statusText = isConnected ? 'Online' : 'Offline';
+
+            // Determine Icon
+            let Icon = MessageSquare;
+            let color = 'text-green-500';
+            if (platform === 'Website') { Icon = Globe; color = 'text-primary'; }
+
+            return (
+              <Card key={bot.id} className="p-4 hover:shadow-md transition-all border-border group bg-white">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className={cn("p-3 rounded-2xl bg-gray-50 group-hover:bg-primary/5 transition-colors", color)}>
+                      <Icon className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-foreground">{bot.name}</h4>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className={`w-2 h-2 rounded-full ${statusColor} ${isConnected ? 'animate-pulse' : ''}`} />
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">
+                          {platform || 'API'} • {statusText}
+                        </span>
+                      </div>
                     </div>
                   </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground hover:text-primary"
+                      onClick={() => handleOpenSettings(bot)}
+                    >
+                      <Settings2 className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary"><ExternalLink className="w-4 h-4" /></Button>
+                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary"><ExternalLink className="w-4 h-4" /></Button>
-                  <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
-                </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            );
+          })}
+          {fetchedIntegrations.length === 0 && !isLoading && (
+            <div className="p-8 text-center text-muted-foreground border border-dashed rounded-xl">
+              No active integrations found.
+            </div>
+          )}
         </div>
       </div>
 
@@ -168,53 +274,72 @@ export default function IntegrationPage() {
             </div>
           </div>
 
-          <div className="p-8 bg-white">
-            {configStep === 'input' && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1 tracking-widest">Bot Identity</Label>
-                    <Input placeholder={`e.g. My ${selectedPlatform} Bot`} className="h-12 bg-gray-50 rounded-xl px-4" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1 tracking-widest">Access Token / API Key</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-4 top-4 w-4 h-4 text-muted-foreground" />
-                      <Input type="password" placeholder="••••••••••••" className="h-12 pl-12 bg-gray-50 rounded-xl" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  {/* Tombol Connect (Selalu ada) */}
-                  <Button
-                    onClick={() => handleAction('connect')}
-                    disabled={isSaving}
-                    className="w-full h-12 bg-primary font-bold text-white rounded-xl shadow-lg shadow-primary/20 active:scale-95 transition-all"
-                  >
-                    {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Connect'}
-                  </Button>
-
-                  {/* Tombol Generate QR Khusus WhatsApp */}
-                  {selectedPlatform === 'WhatsApp' && (
-                    <Button
-                      onClick={() => handleAction('qr')}
-                      disabled={isSaving}
-                      variant="outline"
-                      className="w-full h-12 border-border font-bold text-foreground rounded-xl active:scale-95 flex items-center justify-center gap-2"
-                    >
-                      <QrCode className="w-4 h-4" />
-                      Generate QR Code
-                    </Button>
-                  )}
-                </div>
+          <div className="p-8 bg-white min-h-[300px]">
+            {isSaving && (
+              <div className="flex flex-col items-center justify-center h-full py-10">
+                <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
+                <p className="text-sm text-muted-foreground">Connecting to server...</p>
               </div>
             )}
 
-            {configStep === 'qr' && (
+            {!isSaving && configStep === 'input' && !activeIntegrationId && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
+                {selectedPlatform === 'WhatsApp' ? (
+                  <div className="space-y-4">
+                    <Label className="text-xs font-bold uppercase">Select Bot to Connect</Label>
+
+                    <select
+                      className="flex h-12 w-full items-center justify-between rounded-xl border border-input bg-gray-50 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      onChange={(e) => setSelectedBotId(e.target.value)}
+                      value={selectedBotId}
+                    >
+                      <option value="">Choose a bot from Builder...</option>
+                      {allBots.filter((b: any) => !b.integrationId).map((bot: any) => (
+                        <option key={bot.id} value={bot.id}>
+                          {bot.name} ({bot.agent?.name || 'No Agent'})
+                        </option>
+                      ))}
+                    </select>
+
+                    {allBots.filter((b: any) => !b.integrationId).length === 0 && (
+                      <div className="p-3 text-xs text-center text-muted-foreground">No unlinked bots available. Create one in Bot Builder first.</div>
+                    )}
+
+                    <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                      <p className="text-xs text-blue-600">
+                        Tips: Link a Bot to generate a connection slot.
+                      </p>
+                    </div>
+
+                    <Button
+                      onClick={handleCreateSession}
+                      disabled={isSaving}
+                      className="w-full h-12 bg-primary font-bold text-white rounded-xl shadow-lg shadow-primary/20 active:scale-95 transition-all"
+                    >
+                      {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Create Connection & Link Bot'}
+                    </Button>
+                  </div>
+                ) : (
+                  // Generic / Website placeholder logic
+                  <div className="space-y-4">
+                    <p className="text-sm">Website Widget configuration is available in the main Admin dashboard.</p>
+                    <Button onClick={() => setIsModalOpen(false)} variant="outline">Close</Button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {!isSaving && configStep === 'qr' && (
               <div className="flex flex-col items-center animate-in zoom-in duration-500">
                 <div className="p-4 bg-white border-2 border-primary/10 rounded-[2.5rem] shadow-xl mb-6 relative group">
-                  <img src={qrCodeUrl!} alt="QR" className="w-52 h-52 rounded-2xl" />
+                  {qrCodeUrl ? (
+                    <img src={qrCodeUrl} alt="QR" className="w-52 h-52 rounded-2xl" />
+                  ) : (
+                    <div className="w-52 h-52 flex flex-col items-center justify-center bg-gray-50 rounded-2xl text-muted-foreground gap-2">
+                      <Loader2 className="w-8 h-8 animate-spin" />
+                      <span className="text-xs font-medium">Waiting for QR...</span>
+                    </div>
+                  )}
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-white/80 transition-opacity rounded-[2.5rem] backdrop-blur-sm">
                     <RefreshCw className="w-6 h-6 text-primary animate-spin-slow" />
                   </div>
@@ -230,7 +355,7 @@ export default function IntegrationPage() {
               </div>
             )}
 
-            {configStep === 'success' && (
+            {!isSaving && configStep === 'success' && (
               <div className="flex flex-col items-center py-6 text-center animate-in zoom-in">
                 <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mb-6">
                   <CheckCircle2 className="w-10 h-10 text-emerald-500" />

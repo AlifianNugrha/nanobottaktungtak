@@ -3,6 +3,8 @@ import type { Metadata } from 'next'
 import { Plus_Jakarta_Sans } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
+import { ThemeProvider } from "@/components/theme-provider"
+import { LanguageProvider } from "@/components/language-provider"
 
 const jakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -10,14 +12,14 @@ const jakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'Nexobot',
+  title: 'Nanobot By NanoArtif',
   description: 'Professional analytics and management dashboard',
   icons: {
     // Ganti '/logo.png' dengan nama file logo Anda yang ada di folder public
-    icon: '/logo.png',
+    icon: '/LOGOS.png',
 
     // Opsional: Jika ingin logo yang sama juga dipakai untuk bookmark di iPhone/iPad
-    apple: '/logo.png',
+    apple: '/LOGOS.png',
   },
 }
 
@@ -30,10 +32,14 @@ export default function RootLayout({
     // TAMBAHKAN suppressHydrationWarning di sini
     <html lang="en" className={`${jakartaSans.variable}`} suppressHydrationWarning>
       <body
-        className="font-sans antialiased bg-white text-foreground"
-        suppressHydrationWarning // INI KUNCINYA agar error extension browser hilang
+        className="font-sans antialiased text-foreground"
+        suppressHydrationWarning
       >
-        {children}
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <LanguageProvider>
+            {children}
+          </LanguageProvider>
+        </ThemeProvider>
         <Analytics />
       </body>
     </html>

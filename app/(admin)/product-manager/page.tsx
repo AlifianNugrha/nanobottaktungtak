@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,8 +17,10 @@ import {
   Loader2,
   X,
   Tags,
-  Check
+  Check,
+  Sparkles
 } from 'lucide-react';
+import Link from 'next/link';
 import {
   Select,
   SelectContent,
@@ -34,17 +36,18 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
+import { getProducts, createProduct, updateProduct, deleteProduct } from '@/app/actions/product-actions';
+import { useEffect } from 'react';
+
 // Data Dummy Awal
-const INITIAL_PRODUCTS = [
-  { id: '1', name: 'MacBook Pro M3', price: '24.999.000', category: 'Laptop', stock: '12', description: 'Powerful M3 Chip' },
-  { id: '2', name: 'iPhone 15 Pro', price: '18.500.000', category: 'Smartphone', stock: '25', description: 'Titanium design' }
-];
+const INITIAL_PRODUCTS: any[] = [];
 
 const INITIAL_CATEGORIES = ['Electronics', 'Laptop', 'Smartphone', 'Accessories', 'General'];
 
 export default function ProductManagerPage() {
   const [view, setView] = useState<'list' | 'add' | 'edit'>('list');
   const [products, setProducts] = useState(INITIAL_PRODUCTS);
+  const [limit, setLimit] = useState(999);
   const [categories, setCategories] = useState(INITIAL_CATEGORIES);
   const [isSaving, setIsSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,6 +56,51 @@ export default function ProductManagerPage() {
   const [newCatInput, setNewCatInput] = useState('');
   const [isCatModalOpen, setIsCatModalOpen] = useState(false);
 
+  // File Upload State
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  // Import Supabase Client
+  const { supabase } = require('@/lib/supabase-client');
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+
+    try {
+      // 1. Upload to Supabase Storage (Bucket: 'products')
+      const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
+      const { data, error } = await supabase
+        .storage
+        .from('products')
+        .upload(fileName, file);
+
+      if (error) {
+        console.error('Supabase Upload Error:', error);
+        alert(`Gagal upload ke Supabase: ${error.message}. Pastikan bucket 'products' sudah dibuat dan Public.`);
+        setIsUploading(false);
+        return;
+      }
+
+      // 2. Get Public URL
+      const { data: publicUrlData } = supabase
+        .storage
+        .from('products')
+        .getPublicUrl(fileName);
+
+      if (publicUrlData) {
+        setFormData({ ...formData, image: publicUrlData.publicUrl });
+      }
+
+    } catch (err) {
+      console.error(err);
+      alert('Terjadi kesalahan saat upload.');
+    }
+    setIsUploading(false);
+  };
+
   // State Form Produk
   const [formData, setFormData] = useState({
     id: '',
@@ -60,22 +108,62 @@ export default function ProductManagerPage() {
     price: '',
     category: 'General',
     stock: '',
-    description: ''
+    description: '',
+    image: ''
   });
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    const res = await getProducts();
+    if (res.success) {
+      setProducts(res.data || []);
+      // @ts-ignore
+      setLimit(res.limit || 1);
+    }
+  };
 
   // --- LOGIKA PRODUK ---
   const handleSaveProduct = async () => {
     if (!formData.name || !formData.price) return alert("Nama dan Harga wajib diisi!");
     setIsSaving(true);
-    await new Promise(r => setTimeout(r, 800));
 
+    const fData = new FormData();
+    fData.append('name', formData.name);
+    fData.append('price', formData.price);
+    fData.append('category', formData.category);
+    fData.append('stock', formData.stock);
+    fData.append('description', formData.description);
+    fData.append('image', formData.image);
+
+    let res;
     if (view === 'edit') {
-      setProducts(products.map(p => p.id === formData.id ? formData : p));
+      res = await updateProduct(formData.id, fData);
     } else {
-      setProducts([{ ...formData, id: Date.now().toString() }, ...products]);
+      res = await createProduct(fData);
+    }
+
+    if (res.success) {
+      fetchProducts();
+      setView('list');
+      setFormData({ id: '', name: '', price: '', category: 'General', stock: '', description: '', image: '' });
+    } else {
+      alert(res.error || "Gagal menyimpan produk");
     }
     setIsSaving(false);
-    setView('list');
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm("Yakin ingin menghapus produk ini?")) {
+      const res = await deleteProduct(id);
+      if (res.success) {
+        fetchProducts();
+      } else {
+        alert(res.error || "Gagal menghapus produk");
+      }
+    }
   };
 
   // --- LOGIKA KATEGORI ---
@@ -103,9 +191,23 @@ export default function ProductManagerPage() {
             </Button>
           )}
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              {view === 'list' ? 'Product Catalog' : view === 'edit' ? 'Edit Product' : 'New Product'}
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-3xl font-bold tracking-tight">
+                {view === 'list' ? 'Product Catalog' : view === 'edit' ? 'Edit Product' : 'New Product'}
+              </h1>
+              {view === 'list' && (
+                <>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${products.length >= limit ? 'bg-red-50 text-red-600 border-red-200' : 'bg-green-50 text-green-600 border-green-200'}`}>
+                    {products.length} / {limit > 900 ? '∞' : limit} Used
+                  </span>
+                  {products.length >= limit && (
+                    <Link href="/admin/pricing" className="ml-2 text-[10px] font-black text-[#1E90FF] uppercase tracking-wider hover:underline flex items-center gap-1 animate-pulse">
+                      Upgrade to Pro <Sparkles className="w-3 h-3" />
+                    </Link>
+                  )}
+                </>
+              )}
+            </div>
             <p className="text-muted-foreground text-sm">Kelola inventaris dan kategori produk Anda.</p>
           </div>
         </div>
@@ -150,8 +252,12 @@ export default function ProductManagerPage() {
               </DialogContent>
             </Dialog>
 
-            <Button onClick={() => setView('add')} className="bg-primary hover:bg-primary/90 text-white gap-2 h-11 px-6 font-bold shadow-lg shadow-primary/20 rounded-xl">
-              <Plus className="w-4 h-4" /> Add Product
+            <Button
+              onClick={() => setView('add')}
+              disabled={products.length >= limit}
+              className={`text-white gap-2 h-11 px-6 font-bold shadow-lg rounded-xl transition-all ${products.length >= limit ? 'bg-gray-300 cursor-not-allowed text-gray-500 shadow-none' : 'bg-primary hover:bg-primary/90 shadow-primary/20'}`}
+            >
+              {products.length >= limit ? 'Limit Reached' : <><Plus className="w-4 h-4" /> Add Product</>}
             </Button>
           </div>
         )}
@@ -160,6 +266,19 @@ export default function ProductManagerPage() {
       {view === 'list' ? (
         /* --- LIST VIEW --- */
         <div className="space-y-6">
+          {products.length >= limit && limit < 100 && (
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white flex items-center justify-between shadow-xl mb-6 relative overflow-hidden group hover:scale-[1.01] transition-transform">
+              <div className="relative z-10">
+                <h3 className="text-2xl font-black italic uppercase tracking-tighter mb-1">Unlock Unlimited Products! 🚀</h3>
+                <p className="text-blue-100 text-sm font-medium opacity-90">Upgrade to PRO plan to upload unlimited products and boost your sales.</p>
+              </div>
+              <Button onClick={() => window.location.href = '/admin/pricing'} className="relative z-10 bg-white text-blue-600 font-bold hover:bg-gray-50 shadow-lg border-2 border-transparent hover:border-blue-200">
+                Upgrade Now ⚡
+              </Button>
+              {/* Decoration */}
+              <div className="absolute right-0 top-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
+            </div>
+          )}
           <div className="relative max-w-md">
             <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
             <Input
@@ -171,34 +290,46 @@ export default function ProductManagerPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-500">
-            {products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase())).map((product) => (
-              <Card key={product.id} className="group overflow-hidden border-border bg-white hover:shadow-xl transition-all">
-                <div className="aspect-video bg-gray-50 flex items-center justify-center border-b border-border relative">
-                  <Package className="w-10 h-10 text-muted-foreground/30" />
-                  <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-[10px] font-bold px-2 py-1 rounded border border-border uppercase tracking-wider">
-                    {product.category}
-                  </span>
-                </div>
-                <div className="p-5">
-                  <div className="flex justify-between items-start mb-1">
-                    <h3 className="font-bold text-lg leading-tight">{product.name}</h3>
-                    <p className="font-bold text-primary">Rp {product.price}</p>
+            {products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase())).length > 0 ? (
+              products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase())).map((product) => (
+                <Card key={product.id} className="group overflow-hidden border-border bg-white hover:shadow-xl transition-all">
+                  <div className="aspect-video bg-gray-50 flex items-center justify-center border-b border-border relative overflow-hidden">
+                    {product.image ? (
+                      <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    ) : (
+                      <Package className="w-10 h-10 text-muted-foreground/30" />
+                    )}
+                    <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-[10px] font-bold px-2 py-1 rounded border border-border uppercase tracking-wider shadow-sm z-10">
+                      {product.category}
+                    </span>
                   </div>
-                  <p className="text-xs text-muted-foreground line-clamp-2 mb-4">{product.description || 'No description available.'}</p>
-                  <div className="flex items-center justify-between pt-4 border-t">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase">Stock: {product.stock}</span>
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => { setFormData(product); setView('edit'); }} className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary">
-                        <Settings2 className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => setProducts(products.filter(p => p.id !== product.id))} className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                  <div className="p-5">
+                    <div className="flex justify-between items-start mb-1">
+                      <h3 className="font-bold text-lg leading-tight">{product.name}</h3>
+                      <p className="font-bold text-primary">Rp {product.price}</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground line-clamp-2 mb-4">{product.description || 'No description available.'}</p>
+                    <div className="flex items-center justify-between pt-4 border-t">
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase">Stock: {product.stock}</span>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => { setFormData(product); setView('edit'); }} className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary">
+                          <Settings2 className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(product.id)} className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              ))
+            ) : (
+              <div className="col-span-full py-20 text-center">
+                <Package className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
+                <p className="text-muted-foreground font-medium">No products found.</p>
+                <p className="text-xs text-muted-foreground mt-1">Start by adding a new product to your catalog.</p>
+              </div>
+            )}
           </div>
         </div>
       ) : (
@@ -206,9 +337,53 @@ export default function ProductManagerPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in slide-in-from-bottom-4 duration-500">
           <Card className="p-6 text-center space-y-4 shadow-sm h-fit">
             <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Product Image</Label>
-            <div className="aspect-square w-full max-w-[200px] mx-auto border-2 border-dashed border-primary/20 rounded-[2rem] flex flex-col items-center justify-center bg-gray-50 hover:bg-primary/5 transition-all cursor-pointer group">
-              <Upload className="w-6 h-6 text-muted-foreground group-hover:text-primary" />
-              <span className="text-[10px] font-bold mt-2 text-muted-foreground group-hover:text-primary uppercase">Upload</span>
+            <div className="aspect-square w-full max-w-[200px] mx-auto border-2 border-dashed border-primary/20 rounded-[2rem] flex flex-col items-center justify-center bg-gray-50 overflow-hidden relative mb-4">
+              {formData.image ? (
+                <img src={formData.image} alt="Preview" className="w-full h-full object-cover" />
+              ) : (
+                <div className="flex flex-col items-center justify-center text-muted-foreground p-4">
+                  <Upload className="w-10 h-10 mb-2 opacity-20" />
+                  <span className="text-[10px] font-bold uppercase opacity-50">No Image Selected</span>
+                </div>
+              )}
+            </div>
+
+            {/* Hidden Input File */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept="image/*"
+              onChange={handleFileUpload}
+            />
+
+            {/* Explicit Buttons */}
+            <div className="space-y-2">
+              <Button
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full bg-primary text-white font-bold rounded-xl"
+                disabled={isUploading}
+              >
+                {isUploading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4 mr-2" /> Choose Image
+                  </>
+                )}
+              </Button>
+
+              {formData.image && (
+                <Button
+                  variant="outline"
+                  onClick={() => setFormData({ ...formData, image: '' })}
+                  className="w-full text-destructive hover:bg-destructive/10 border-destructive/20 font-bold rounded-xl"
+                >
+                  Remove Image
+                </Button>
+              )}
             </div>
           </Card>
 

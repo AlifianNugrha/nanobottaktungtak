@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -8,18 +9,15 @@ import {
     Bell, Sparkles, Lock, LucideIcon, LogOut
 } from 'lucide-react';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { logout } from '@/app/actions/auth-actions';
 
 export function SidebarFree() {
     const [isOpen, setIsOpen] = useState(false);
     const pathname = usePathname();
-    const router = useRouter();
-    const isPro = false; // Always false for Free Dashboard
 
-    const handleLogout = () => {
-        localStorage.removeItem('isLoggedIn');
-        router.replace('/login');
+    const handleLogout = async () => {
+        await logout();
     };
 
     interface NavItem {
@@ -38,7 +36,6 @@ export function SidebarFree() {
     const navCategories: NavCategory[] = [
         {
             category: 'Premium Access',
-            // Always show upgrade option
             items: [{ href: '/admin/pricing', label: 'Upgrade to Pro', icon: Sparkles, premium: true }],
         },
         {
@@ -64,13 +61,13 @@ export function SidebarFree() {
             category: 'Sales & Finance',
             items: [
                 { href: '/sales-monitoring', label: 'Sales Monitoring', icon: ShoppingCart },
-                { href: '/payment', label: 'Payments', icon: CreditCard, isLocked: true }, // Locked
+                { href: '/payment', label: 'Payments', icon: CreditCard, isLocked: true },
             ],
         },
         {
             category: 'Analytics',
             items: [
-                { href: '/ai-analytic', label: 'AI Analytics', icon: BarChart3, isLocked: true }, // Locked
+                { href: '/ai-analytic', label: 'AI Analytics', icon: BarChart3, isLocked: true },
             ],
         },
         {
@@ -98,12 +95,11 @@ export function SidebarFree() {
                 isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
             )}>
                 {/* Branding */}
-                <div className="p-7 border-b border-border bg-white shrink-0">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-                            <Bot className="text-white w-6 h-6" />
+                <div className="p-6 border-b border-border bg-white shrink-0">
+                    <div className="flex items-center justify-center w-full">
+                        <div className="w-full flex justify-center items-center pointer-events-none select-none">
+                            <img src="/logo.png" alt="NanoArtif" className="w-full h-auto object-contain max-h-12" />
                         </div>
-                        <h1 className="text-2xl font-black text-foreground tracking-tighter italic uppercase underline-offset-4">NEXORA</h1>
                     </div>
                 </div>
 
@@ -165,7 +161,7 @@ export function SidebarFree() {
                     <div className="flex items-center gap-4 px-2">
                         <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs font-black">US</div>
                         <div className="flex-1 overflow-hidden text-left">
-                            <p className="text-[14px] font-bold truncate leading-none mb-1">User Nexora</p>
+                            <p className="text-[14px] font-bold truncate leading-none mb-1">User Nanobot</p>
                             <p className="text-[10px] text-muted-foreground truncate uppercase font-medium tracking-tighter">Free Account</p>
                         </div>
                         <button

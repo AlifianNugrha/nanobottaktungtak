@@ -1,0 +1,213 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+  PRO_USER
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  companyName String?
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  bots      Bot[]
+  agents    Agent[]
+  integrations Integration[]
+  products    Product[]
+  notifications Notification[]
+  customers   Customer[]
+  sales       Sale[]
+  campaigns   Campaign[]
+  
+  // Usage Tracking
+  aiMessageCount Int      @default(0)
+  lastMessageAt  DateTime @default(now())
+
+  @@map("users")
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  price       String
+  stock       Int      @default(0)
+  category    String   @default("General")
+  image       String?
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("products")
+}
+
+model Agent {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  role        String?
+  avatar      String?
+  config      Json?
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  bots        Bot[]
+  knowledgeDocs KnowledgeDoc[]
+
+  @@map("agents")
+}
+
+model Bot {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  config      Json?
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agentId     String?
+  agent       Agent?   @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  integrationId String?
+  integration Integration? @relation(fields: [integrationId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("bots")
+}
+
+model Integration {
+  id          String   @id @default(uuid())
+  platform    String   // 'WhatsApp', 'Telegram', 'Web'
+  name        String   // Display name
+  status      String   @default("disconnected") // 'connected', 'disconnected', 'connecting'
+  config      Json?    // Store session data, credentials, etc
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  bots        Bot[]
+  conversations Conversation[]
+
+  @@map("integrations")
+}
+
+model Conversation {
+  id            String   @id @default(uuid())
+  integrationId String
+  integration   Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  contactNumber String   // WhatsApp number (e.g., "6281234567890@s.whatsapp.net")
+  messages      Json     // Array of {role: 'user'|'assistant', content: string, timestamp: string}
+  isBotPaused   Boolean  @default(false)
+  unreadCount   Int      @default(0)
+  lastMessage   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([integrationId, contactNumber])
+  @@map("conversations")
+}
+
+
+model Notification {
+  id        String   @id @default(uuid())
+  type      String   // 'Sales', 'System', 'AI Bot', 'Info'
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("notifications")
+}
+
+model Customer {
+  id        String   @id @default(uuid())
+  name      String
+  email     String?
+  phone     String?
+  status    String   @default("Lead") // 'Lead', 'Active', 'Inactive'
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("customers")
+}
+
+model Sale {
+  id           String   @id @default(uuid())
+  customerName String
+  productName  String
+  amount       Decimal  @db.Decimal(15, 2)
+  status       String   @default("Pending") // 'Completed', 'Pending', 'Cancelled'
+  date         DateTime @default(now())
+  
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("sales")
+}
+
+// === KNOWLEDGE BASE (Phase 1) ===
+model KnowledgeDoc {
+  id          String   @id @default(uuid())
+  title       String
+  content     String   @db.Text
+  fileType    String   // 'text', 'pdf', 'url'
+  agentId     String
+  agent       Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("knowledge_docs")
+}
+
+// === CAMPAIGN / BROADCAST (Phase 3) ===
+model Campaign {
+  id              String   @id @default(uuid())
+  name            String
+  messageTemplate String   @db.Text
+  status          String   @default("draft") // 'draft', 'scheduled', 'sending', 'completed', 'failed'
+  scheduledAt     DateTime?
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipients      CampaignRecipient[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("campaigns")
+}
+
+model CampaignRecipient {
+  id          String   @id @default(uuid())
+  campaignId  String
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  customerName String?
+  customerPhone String
+  status      String   @default("pending") // 'pending', 'sent', 'failed'
+  error       String?
+  sentAt      DateTime?
+  
+  @@map("campaign_recipients")
+}

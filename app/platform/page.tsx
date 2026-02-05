@@ -1,29 +1,65 @@
+
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import {
-    BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell
+    Activity, Shield, Users, CheckCircle2, Bot
+} from 'lucide-react';
+import { getPlatformStats } from '@/app/actions/platform-actions';
+import {
+    AreaChart,
+    Area,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer
 } from 'recharts';
-import { Server, Activity, Shield, Users, Terminal, Database, AlertCircle, CheckCircle2 } from 'lucide-react';
-
-const systemData = [
-    { time: '00:00', cpu: 45, memory: 60 },
-    { time: '04:00', cpu: 55, memory: 65 },
-    { time: '08:00', cpu: 85, memory: 80 },
-    { time: '12:00', cpu: 75, memory: 70 },
-    { time: '16:00', cpu: 65, memory: 65 },
-    { time: '20:00', cpu: 50, memory: 60 },
-];
-
-const trafficData = [
-    { name: 'API Calls', value: 45000 },
-    { name: 'Web Traffic', value: 12000 },
-    { name: 'Database', value: 8500 },
-];
-
-const COLORS = ['#0f172a', '#3b82f6', '#64748b'];
 
 export default function PlatformDashboard() {
+    const [stats, setStats] = useState({
+        totalAgents: 0,
+        totalBots: 0,
+        totalUsers: 0,
+        activeNodes: 0,
+        systemStatus: 'Loading...',
+        monthlyGrowth: [] as any[],
+        isAdmin: false
+    });
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+        const fetchStats = async () => {
+            const res = await getPlatformStats();
+            if (res.success && res.data) {
+                setStats({
+                    totalAgents: res.data.totalAgents,
+                    totalBots: res.data.totalBots,
+                    totalUsers: res.data.totalUsers,
+                    activeNodes: 8, // Mock for now
+                    systemStatus: 'Optimal',
+                    monthlyGrowth: [
+                        { name: 'Week 1', users: widthData(res.data.totalUsers * 0.8), bots: widthData(res.data.totalBots * 0.7) },
+                        { name: 'Week 2', users: widthData(res.data.totalUsers * 0.85), bots: widthData(res.data.totalBots * 0.8) },
+                        { name: 'Week 3', users: widthData(res.data.totalUsers * 0.9), bots: widthData(res.data.totalBots * 0.9) },
+                        { name: 'Week 4', users: res.data.totalUsers, bots: res.data.totalBots },
+                    ],
+                    isAdmin: true // Platform is always admin
+                });
+            }
+        };
+
+        // Helper to simulate historical data
+        const widthData = (val: number) => Math.floor(val);
+
+        fetchStats();
+    }, []);
+
+    // Prevent hydration mismatch
+    if (!mounted) return null;
+
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Header */}
@@ -41,43 +77,62 @@ export default function PlatformDashboard() {
             </div>
 
             {/* Grid Status */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* Only show Total Users if Admin */}
+                {stats.isAdmin && (
+                    <Card className="p-6 border border-slate-200 shadow-sm bg-white">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-indigo-100 rounded-xl">
+                                <Users className="w-6 h-6 text-indigo-700" />
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Users</p>
+                                <h3 className="text-2xl font-black text-slate-900">{stats.totalUsers}</h3>
+                            </div>
+                        </div>
+                        <div className="mt-4 pt-4 border-t border-slate-100 flex justify-between text-xs font-medium text-slate-500">
+                            <span>Registered</span>
+                            <span className="text-indigo-600 flex items-center gap-1">+12% this month</span>
+                        </div>
+                    </Card>
+                )}
+
                 <Card className="p-6 border border-slate-200 shadow-sm bg-white">
                     <div className="flex items-center gap-4">
-                        <div className="p-3 bg-slate-100 rounded-xl">
-                            <Server className="w-6 h-6 text-slate-700" />
+                        <div className="p-3 bg-blue-100 rounded-xl">
+                            <Bot className="w-6 h-6 text-blue-700" />
                         </div>
                         <div>
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Active Nodes</p>
-                            <h3 className="text-2xl font-black text-slate-900">24/24</h3>
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Bots</p>
+                            <h3 className="text-2xl font-black text-slate-900">{stats.totalBots}</h3>
                         </div>
                     </div>
                     <div className="mt-4 pt-4 border-t border-slate-100 flex justify-between text-xs font-medium text-slate-500">
-                        <span>US-East1: 12</span>
-                        <span className="text-green-600 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Stable</span>
+                        <span>Deployed</span>
+                        <span className="text-green-600 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Online</span>
                     </div>
                 </Card>
 
                 <Card className="p-6 border border-slate-200 shadow-sm bg-white">
                     <div className="flex items-center gap-4">
-                        <div className="p-3 bg-slate-100 rounded-xl">
-                            <Activity className="w-6 h-6 text-slate-700" />
+                        <div className="p-3 bg-purple-100 rounded-xl">
+                            <Activity className="w-6 h-6 text-purple-700" />
                         </div>
                         <div>
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Global Latency</p>
-                            <h3 className="text-2xl font-black text-slate-900">42ms</h3>
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">AI Agents</p>
+                            <h3 className="text-2xl font-black text-slate-900">{stats.totalAgents}</h3>
                         </div>
                     </div>
                     <div className="mt-4 pt-4 border-t border-slate-100 flex justify-between text-xs font-medium text-slate-500">
-                        <span>Avg Load: 65%</span>
+                        <span>Ready</span>
                         <span className="text-blue-600 flex items-center gap-1"><Activity className="w-3 h-3" /> Optimal</span>
                     </div>
                 </Card>
 
                 <Card className="p-6 border border-slate-200 shadow-sm bg-white">
                     <div className="flex items-center gap-4">
-                        <div className="p-3 bg-slate-100 rounded-xl">
-                            <Shield className="w-6 h-6 text-slate-700" />
+                        <div className="p-3 bg-red-100 rounded-xl">
+                            <Shield className="w-6 h-6 text-red-700" />
                         </div>
                         <div>
                             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Threats Blocked</p>
@@ -91,73 +146,62 @@ export default function PlatformDashboard() {
                 </Card>
             </div>
 
-            {/* Charts Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Main Traffic Chart */}
-                <Card className="col-span-1 lg:col-span-2 p-6 border-slate-200 shadow-sm">
-                    <div className="mb-6 flex justify-between items-center">
-                        <h3 className="font-bold text-slate-900">Resource Usage</h3>
-                        <div className="flex gap-2 text-xs font-medium bg-slate-100 p-1 rounded-lg">
-                            <span className="px-2 py-1 bg-white shadow-sm rounded">CPU</span>
-                            <span className="px-2 py-1 text-slate-500">Memory</span>
-                        </div>
+            {/* Analytics Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="p-6 border border-slate-200 shadow-sm bg-white">
+                    <div className="mb-6">
+                        <h3 className="text-lg font-bold text-slate-900">Growth Analytics</h3>
+                        <p className="text-sm text-slate-500">Platform and user adoption trends over time.</p>
                     </div>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <LineChart data={systemData}>
-                            <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.3} />
-                            <XAxis dataKey="time" axisLine={false} tickLine={false} fontSize={12} />
-                            <YAxis axisLine={false} tickLine={false} fontSize={12} />
-                            <Tooltip />
-                            <Legend />
-                            <Line type="step" dataKey="cpu" stroke="#0f172a" strokeWidth={2} dot={false} />
-                            <Line type="step" dataKey="memory" stroke="#94a3b8" strokeWidth={2} dot={false} strokeDasharray="5 5" />
-                        </LineChart>
-                    </ResponsiveContainer>
+                    <div className="h-[300px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={stats.monthlyGrowth}>
+                                <defs>
+                                    <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="#4F46E5" stopOpacity={0} />
+                                    </linearGradient>
+                                    <linearGradient id="colorBots" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#0EA5E9" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="#0EA5E9" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                                <XAxis dataKey="name" tick={{ fill: '#64748B', fontSize: 12 }} axisLine={false} tickLine={false} />
+                                <YAxis tick={{ fill: '#64748B', fontSize: 12 }} axisLine={false} tickLine={false} />
+                                <Tooltip
+                                    contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #E2E8F0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                    itemStyle={{ fontSize: '12px', fontWeight: 600 }}
+                                />
+                                {stats.isAdmin && (
+                                    <Area type="monotone" dataKey="users" stroke="#4F46E5" strokeWidth={3} fillOpacity={1} fill="url(#colorUsers)" activeDot={{ r: 6 }} name="Users" />
+                                )}
+                                <Area type="monotone" dataKey="bots" stroke="#0EA5E9" strokeWidth={3} fillOpacity={1} fill="url(#colorBots)" activeDot={{ r: 6 }} name="Active Bots" />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
                 </Card>
 
-                {/* Traffic Distribution */}
-                <Card className="col-span-1 p-6 border-slate-200 shadow-sm">
-                    <h3 className="font-bold text-slate-900 mb-6">Traffic Sources</h3>
-                    <ResponsiveContainer width="100%" height={250}>
-                        <PieChart>
-                            <Pie
-                                data={trafficData}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={60}
-                                outerRadius={80}
-                                paddingAngle={5}
-                                dataKey="value"
-                            >
-                                {trafficData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                ))}
-                            </Pie>
-                            <Tooltip />
-                            <Legend verticalAlign="bottom" height={36} />
-                        </PieChart>
-                    </ResponsiveContainer>
-                    <div className="mt-4 text-center">
-                        <p className="text-xs text-slate-500">Total requests per second</p>
-                        <p className="text-xl font-black text-slate-900">84.2k/s</p>
+                <Card className="p-6 border border-slate-200 shadow-sm bg-white">
+                    <div className="mb-6">
+                        <h3 className="text-lg font-bold text-slate-900">Recent System Activity</h3>
+                        <p className="text-sm text-slate-500">Latest automated actions and alerts.</p>
+                    </div>
+                    <div className="space-y-4">
+                        {[1, 2, 3, 4, 5].map((_, i) => (
+                            <div key={i} className="flex items-start gap-4 pb-4 border-b border-slate-100 last:border-0 last:pb-0">
+                                <div className={`w-2 h-2 mt-2 rounded-full ${i % 2 === 0 ? 'bg-green-500' : 'bg-blue-500'}`} />
+                                <div>
+                                    <p className="text-sm font-medium text-slate-800">
+                                        {i % 2 === 0 ? 'New Bot "Customer Support" deployed successfully' : 'System backup completed'}
+                                    </p>
+                                    <p className="text-xs text-slate-500">2 hours ago</p>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </Card>
             </div>
-
-            {/* Logs Terminal Preview */}
-            <Card className="bg-[#1e1e1e] border-slate-800 p-4 rounded-xl overflow-hidden font-mono text-xs shadow-2xl">
-                <div className="flex items-center gap-2 mb-3 border-b border-gray-700 pb-2">
-                    <Terminal className="text-gray-400 w-4 h-4" />
-                    <span className="text-gray-400">System Logs</span>
-                </div>
-                <div className="space-y-1.5 text-gray-300">
-                    <p><span className="text-blue-400">[INFO]</span> Service 'auth-worker-01' started successfully.</p>
-                    <p><span className="text-green-400">[SUCCESS]</span> Database migration completed in 1.2s.</p>
-                    <p><span className="text-yellow-400">[WARN]</span> High latency detected on node us-east-4 (120ms).</p>
-                    <p><span className="text-blue-400">[INFO]</span> Scaling up worker pool to handle incoming load...</p>
-                    <p className="animate-pulse">_</p>
-                </div>
-            </Card>
         </div>
     );
 }

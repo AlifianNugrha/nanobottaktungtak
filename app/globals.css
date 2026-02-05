@@ -15,7 +15,7 @@
   --popover-foreground: #0f172a;
 
   /* Primary menggunakan Hijau #01D2B3 */
-  --primary: #01D2B3;
+  --primary: #1E90FF;
   --primary-foreground: #ffffff;
 
   /* Secondary & Muted */
@@ -25,26 +25,26 @@
   --muted-foreground: #64748b;
 
   /* Accent & Destructive */
-  --accent: #01D2B3;
+  --accent: #1E90FF;
   --accent-foreground: #ffffff;
-  --destructive: #ef4444;
+  --destructive: #00bfff;
   --destructive-foreground: #ffffff;
 
   /* Border & Input */
   --border: #e2e8f0;
   --input: #e2e8f0;
-  --ring: #01D2B3;
+  --ring: #1E90FF;
 
   /* Sidebar Khusus */
   --sidebar: #ffffff;
   --sidebar-foreground: #0f172a;
-  --sidebar-primary: #01D2B3;
+  --sidebar-primary: #1E90FF;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #f0fdfa;
   /* Hijau sangat muda untuk hover */
-  --sidebar-accent-foreground: #01D2B3;
+  --sidebar-accent-foreground: #1E90FF;
   --sidebar-border: #e2e8f0;
-  --sidebar-ring: #01D2B3;
+  --sidebar-ring: #1E90FF;
 
   --radius: 0.625rem;
 }
@@ -55,7 +55,7 @@
   --foreground: #e8ecf1;
   --card: #1a1f3a;
   --card-foreground: #e8ecf1;
-  --primary: #01D2B3;
+  --primary: #1E90FF;
   --primary-foreground: #ffffff;
   --border: #1e293b;
   --sidebar: #0f172a;
