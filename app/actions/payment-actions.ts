@@ -76,7 +76,8 @@ export async function createPaymentToken(plan: 'pro_monthly' | 'pro_yearly') {
 // Webhook handler for Midtrans notification
 export async function handlePaymentNotification(notificationJson: any) {
     try {
-        const statusResponse = await snap.transaction.notification(notificationJson);
+        // @ts-ignore
+        const statusResponse = await (snap as any).transaction.notification(notificationJson);
 
         const orderId = statusResponse.order_id;
         const transactionStatus = statusResponse.transaction_status;
