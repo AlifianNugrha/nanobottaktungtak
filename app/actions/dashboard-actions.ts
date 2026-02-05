@@ -21,14 +21,16 @@ export async function getDashboardStats() {
         const isAdmin = dbUser?.role === 'ADMIN';
         const userId = user.id;
 
-        let agentCount, botCount, userCount, monthlyGrowth;
+        let agentCount, botCount, userCount, monthlyGrowth, aiInteractions, totalLeads;
 
         if (isAdmin) {
             // ADMIN: Fetch GLOBAL stats
-            [agentCount, botCount, userCount] = await Promise.all([
+            [agentCount, botCount, userCount, aiInteractions, totalLeads] = await Promise.all([
                 prisma.agent.count(),
                 prisma.bot.count(),
-                prisma.user.count()
+                prisma.user.count(),
+                prisma.conversation.count(), // Approx global interactions
+                prisma.customer.count()
             ]);
 
             // Real Data Analytics (Last 30 Days)
@@ -79,9 +81,13 @@ export async function getDashboardStats() {
 
         } else {
             // NORMAL USER: Fetch PRIVATE stats
-            [agentCount, botCount] = await Promise.all([
+            [agentCount, botCount, aiInteractions, totalLeads] = await Promise.all([
                 prisma.agent.count({ where: { userId } }),
-                prisma.bot.count({ where: { userId } })
+                prisma.bot.count({ where: { userId } }),
+                prisma.conversation.count({
+                    where: { integration: { userId } }
+                }),
+                prisma.customer.count({ where: { userId } })
             ]);
             userCount = 1; // Just themselves
 
@@ -121,11 +127,13 @@ export async function getDashboardStats() {
             data: {
                 totalAgents: agentCount,
                 totalBots: botCount,
-                totalUsers: userCount, // New field
+                totalUsers: userCount,
+                aiInteractions: aiInteractions || 0,
+                totalLeads: totalLeads || 0,
                 activeNodes: 3,
                 systemStatus: 'Operational',
-                monthlyGrowth, // New field for chart
-                isAdmin // Flag for UI
+                monthlyGrowth,
+                isAdmin
             }
         };
     } catch (error) {

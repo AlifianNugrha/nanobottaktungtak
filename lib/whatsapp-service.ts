@@ -41,7 +41,7 @@ export async function restoreExistingSessions() {
     try {
         console.log('[Session Restore] Starting session restoration...');
 
-        // Get all integrations that have WhatsApp sessions in database
+        // Get all integrations that have WhatsApp sessions and still exist in integration table
         const sessions = await prisma.whatsAppSession.findMany({
             select: {
                 sessionId: true,
@@ -54,7 +54,18 @@ export async function restoreExistingSessions() {
         // Restore each session
         for (const session of sessions) {
             try {
-                console.log(`[Session Restore] Restoring session: ${session.sessionId}`);
+                // Check if integration still exists
+                const integration = await prisma.integration.findUnique({
+                    where: { id: session.sessionId }
+                });
+
+                if (!integration) {
+                    console.log(`[Session Restore] Integration ${session.sessionId} no longer exists. Cleaning up orphaned session data...`);
+                    await prisma.whatsAppSession.delete({ where: { sessionId: session.sessionId } }).catch(() => { });
+                    continue;
+                }
+
+                console.log(`[Session Restore] Restoring session: ${session.sessionId} (${integration.name})`);
 
                 // Check if session is already active
                 if (activeSessions.has(session.sessionId)) {
@@ -203,12 +214,15 @@ export async function createWhatsAppSession(sessionId: string) {
 
                 // Update integration status to 'disconnected'
                 try {
-                    await prisma.integration.update({
-                        where: { id: sessionId },
-                        data: { status: 'disconnected' }
-                    });
-                } catch (error) {
-                    console.error(`[Session ${sessionId}] Failed to update status:`, error);
+                    const exists = await prisma.integration.findUnique({ where: { id: sessionId } });
+                    if (exists) {
+                        await prisma.integration.update({
+                            where: { id: sessionId },
+                            data: { status: 'disconnected' }
+                        });
+                    }
+                } catch (error: any) {
+                    console.error(`[Session ${sessionId}] Failed to update status:`, error.message);
                 }
             }
         } else if (connection === 'open') {
@@ -218,13 +232,21 @@ export async function createWhatsAppSession(sessionId: string) {
 
             // Update integration status to 'connected'
             try {
-                await prisma.integration.update({
-                    where: { id: sessionId },
-                    data: { status: 'connected' }
-                });
-                console.log(`[Session ${sessionId}] Status updated to 'connected' in database`);
-            } catch (error) {
-                console.error(`[Session ${sessionId}] Failed to update status:`, error);
+                const exists = await prisma.integration.findUnique({ where: { id: sessionId } });
+                if (exists) {
+                    await prisma.integration.update({
+                        where: { id: sessionId },
+                        data: { status: 'connected' }
+                    });
+                    console.log(`[Session ${sessionId}] Status updated to 'connected' in database`);
+                } else {
+                    console.log(`[Session ${sessionId}] Integration record gone, stopping session.`);
+                    activeSessions.delete(sessionId);
+                    sock.logout();
+                    return;
+                }
+            } catch (error: any) {
+                console.error(`[Session ${sessionId}] Failed to update status:`, error.message);
             }
         }
     });
@@ -276,11 +298,17 @@ export async function createWhatsAppSession(sessionId: string) {
                 const history = await getConversationHistory(sessionId, from);
                 console.log(`Conversation history: ${history.length} messages`);
 
+                // Get Customer Context (Long-term memory)
+                const cleanPhone = from.replace('@s.whatsapp.net', '');
+                const customer = await prisma.customer.findFirst({
+                    where: { userId: bot.userId, phone: cleanPhone }
+                });
+
                 // Show "typing..." status
                 await sock.sendPresenceUpdate('composing', from);
 
-                // Use AI agent to generate response with history
-                const response = await generateAgentResponse(bot.agent, messageText, history);
+                // Use AI agent to generate response with history & customer info
+                const response = await generateAgentResponse(bot.agent, messageText, history, customer);
 
                 // INCREMENT USAGE COUNT
                 await incrementUsage(bot.userId);
@@ -407,7 +435,7 @@ async function getBotForSession(sessionId: string) {
 
 
 // Helper function to generate AI response using agent configuration
-async function generateAgentResponse(agent: any, userMessage: string, history: any[] = []): Promise<string> {
+async function generateAgentResponse(agent: any, userMessage: string, history: any[] = [], customer: any = null): Promise<string> {
     try {
         // Check if API key exists
         const apiKey = process.env.GROQ_API_KEY;
@@ -421,7 +449,7 @@ async function generateAgentResponse(agent: any, userMessage: string, history: a
         });
 
         // FETCH REAL-TIME PRODUCTS
-        // Only fetch products belonging to the agent's owner
+        // ... (rest of product fetch)
         const dbProducts = await prisma.product.findMany({
             where: {
                 userId: agent.userId
@@ -430,6 +458,17 @@ async function generateAgentResponse(agent: any, userMessage: string, history: a
 
         const config = agent.config || {};
         let systemPrompt = config.instructions || `Anda adalah ${agent.name}. Asisten toko yang ramah.`;
+
+        // Inject CUSTOMER PROFILE (Long-term memory)
+        if (customer) {
+            systemPrompt += `\n\n=== 👤 INFORMASI CUSTOMER (INGATAN KAMU) ===\nKamu sedang berbicara dengan:
+- Nama: ${customer.name || 'Belum tahu'}
+- No. Telp: ${customer.phone}
+- Status: ${customer.status}
+${customer.email ? `- Email: ${customer.email}` : ''}
+
+INGAT: Sapu user dengan namanya jika sudah tahu. Jangan tanya nama lagi jika sudah tertulis di atas.`;
+        }
 
         // Inject KNOWLEDGE BASE
         // Inject KNOWLEDGE BASE (RAG Lite)

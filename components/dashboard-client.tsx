@@ -55,28 +55,30 @@ export function DashboardClient({ isPro, userName, userEmail, companyName }: { i
             value: statsData.totalAgents.toString(),
             change: '+100%',
             icon: Users,
-            color: 'text-primary',
+            color: 'text-[#1E90FF]',
         },
         {
             title: 'Active Bots',
             value: statsData.totalBots.toString(),
             change: '+100%',
             icon: Bot,
-            color: 'text-primary',
+            color: 'text-[#1E90FF]',
         },
         {
-            title: 'System Status',
-            value: statsData.systemStatus,
-            change: 'Stable',
-            icon: Activity,
-            color: 'text-primary',
-        },
-        {
-            title: 'Performance',
-            value: '99.9%',
-            change: '+0.1%',
+            title: 'AI Interactions',
+            // @ts-ignore
+            value: (statsData.aiInteractions || 0).toString(),
+            change: 'Real-time',
             icon: Zap,
-            color: 'text-primary',
+            color: 'text-[#1E90FF]',
+        },
+        {
+            title: 'Total Leads',
+            // @ts-ignore
+            value: (statsData.totalLeads || 0).toString(),
+            change: 'Active',
+            icon: TrendingUp,
+            color: 'text-[#1E90FF]',
         },
     ];
 
