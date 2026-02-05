@@ -30,5 +30,9 @@ export async function initializeServer() {
 // Auto-run on import (for Railway and other platforms)
 if (typeof window === 'undefined') {
     // Only run on server-side
-    initializeServer().catch(console.error);
+    // Delay initialization to let the server bind to the port first
+    // This prevents Railway health check timeouts
+    setTimeout(() => {
+        initializeServer().catch(console.error);
+    }, 5000); // 5 seconds delay
 }
