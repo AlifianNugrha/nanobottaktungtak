@@ -113,6 +113,21 @@ async function useDatabaseAuthState(store: DatabaseSessionStore, savedState: any
 }
 
 export async function createWhatsAppSession(sessionId: string) {
+    // 1. Cleanup existing socket if any to prevent "double connection" 
+    // which causes the "spinning loop" and connection errors on WA.
+    const existing = activeSessions.get(sessionId);
+    if (existing?.sock) {
+        console.log(`[Session ${sessionId}] Closing existing socket before recreating...`);
+        try {
+            existing.sock.ev.removeAllListeners('connection.update');
+            existing.sock.ev.removeAllListeners('creds.update');
+            existing.sock.ev.removeAllListeners('messages.upsert');
+            existing.sock.end(undefined);
+        } catch (e) {
+            console.error('Error closing old socket:', e);
+        }
+    }
+
     const sessionStore = new DatabaseSessionStore(sessionId);
 
     // Load or initialize auth state
@@ -129,7 +144,11 @@ export async function createWhatsAppSession(sessionId: string) {
             creds: state.creds,
             keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' })),
         },
-        browser: ['Nexora Bot', 'Chrome', '1.0.0'],
+        // Updated browser identity to be more "standard"
+        browser: ['NanoArtif', 'Chrome', '110.0.0'],
+        connectTimeoutMs: 60000, // 60 seconds timeout
+        retryRequestDelayMs: 5000,
+        keepAliveIntervalMs: 30000,
     });
 
     const session: WhatsAppSession = {
