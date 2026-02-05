@@ -73,6 +73,8 @@ export async function signup(prevState: any, formData: FormData) {
 
     const supabase = await createClient()
 
+    // 1. Sign Up with Supabase
+    // This sends the email automatically if enabled in Supabase Dashboard
     const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -87,32 +89,78 @@ export async function signup(prevState: any, formData: FormData) {
         return { success: false, error: error.message }
     }
 
-    if (data.user) {
-        try {
-            // Create user in Prisma if not exists
-            const existingUser = await prisma.user.findUnique({
-                where: { email }
-            })
+    // 2. CHECK if verification is required
+    // If Supabase returns a user but Session is NULL, it means email confirmation is ON.
+    if (data.user && !data.session) {
+        return { success: true, verify: true }
+    }
 
-            if (!existingUser) {
-                await prisma.user.create({
-                    data: {
-                        id: data.user.id, // Sync ID with Supabase
-                        email: email,
-                        name: name,
-                        role: 'USER',
-                    }
-                })
-            }
-        } catch (dbError) {
-            console.error('Failed to create user in DB:', dbError)
-            // Continue even if DB fails, though this might cause issues later. 
-            // ideally we want transaction but spread across services.
+    // Fallback: If verification is OFF (Auto-confirmed), proceed to login & Prisma creation immediately
+    if (data.user && data.session) {
+        try {
+            await createPrismaUser(data.user, name);
+        } catch (e) {
+            console.error(e)
         }
+        revalidatePath('/', 'layout')
+        redirect('/dashboard')
+    }
+
+    return { success: false, error: "Something went wrong during signup." }
+}
+
+export async function verifySignup(prevState: any, formData: FormData) {
+    const email = formData.get('email') as string
+    const code = formData.get('code') as string
+
+    if (!email || !code) {
+        return { success: false, error: 'Code is required' }
+    }
+
+    const supabase = await createClient()
+
+    // 1. Verify OTP
+    const { data, error } = await supabase.auth.verifyOtp({
+        email,
+        token: code,
+        type: 'signup'
+    })
+
+    if (error) {
+        return { success: false, error: error.message }
+    }
+
+    // 2. Create User in Prisma (Now that they are verified)
+    if (data.user) {
+        const name = data.user.user_metadata?.full_name || email.split('@')[0]
+        await createPrismaUser(data.user, name);
     }
 
     revalidatePath('/', 'layout')
     redirect('/dashboard')
+}
+
+
+// Helper to avoid duplicate code
+async function createPrismaUser(user: any, name: string) {
+    try {
+        const existingUser = await prisma.user.findUnique({
+            where: { email: user.email }
+        })
+
+        if (!existingUser) {
+            await prisma.user.create({
+                data: {
+                    id: user.id,
+                    email: user.email!,
+                    name: name,
+                    role: 'USER',
+                }
+            })
+        }
+    } catch (dbError) {
+        console.error('Failed to create user in DB:', dbError)
+    }
 }
 
 export async function logout() {

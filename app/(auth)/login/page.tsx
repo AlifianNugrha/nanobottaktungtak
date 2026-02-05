@@ -4,7 +4,7 @@ import React, { useState, useActionState, useRef, useEffect } from "react";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Eye, EyeOff, Lock, Mail, User, ArrowRight, Sparkles } from 'lucide-react';
-import { login, signup } from '@/app/actions/auth-actions';
+import { login, signup, verifySignup } from '@/app/actions/auth-actions';
 import Image from 'next/image';
 
 function SubmitButton({ mode, pending }: { mode: 'login' | 'signup', pending: boolean }) {
@@ -26,13 +26,20 @@ function SubmitButton({ mode, pending }: { mode: 'login' | 'signup', pending: bo
     )
 }
 
-const initialState = {
+interface LoginState {
+    success: boolean;
+    error?: string;
+    verify?: boolean;
+    email?: string;
+}
+
+const initialState: LoginState = {
     error: '',
     success: false
 }
 
 export default function LoginPage() {
-    const [mode, setMode] = useState<'login' | 'signup'>('login');
+    const [mode, setMode] = useState<'login' | 'signup' | 'verify'>('login');
     const [showPassword, setShowPassword] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -45,15 +52,29 @@ export default function LoginPage() {
     }, []);
 
     // WRAPPER ACTION untuk mengatasi bug state binding
-    const authAction = async (prevState: any, formData: FormData) => {
+    // @ts-ignore
+    const authAction = async (prevState: LoginState, formData: FormData) => {
         const mode = formData.get('auth_mode');
-        if (mode === 'signup') {
-            return await signup(prevState, formData);
+        const code = formData.get('code');
+
+        if (mode === 'verify' && code) {
+            // @ts-ignore
+            return await verifySignup(prevState, formData);
+        } else if (mode === 'signup') {
+            const res = await signup(prevState, formData);
+            // @ts-ignore
+            if (res.success && res.verify) {
+                setMode('verify'); // Switch UI to verify mode
+                // @ts-ignore
+                return { ...res, email: formData.get('email') as string }; // Pass email back to state
+            }
+            return res;
         } else {
             return await login(prevState, formData);
         }
     };
 
+    // @ts-ignore
     const [state, formAction, isPending] = useActionState(authAction, initialState);
 
     return (
@@ -67,16 +88,18 @@ export default function LoginPage() {
                 <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-indigo-500/30 rounded-full blur-3xl pointer-events-none" />
 
 
-                <div className="w-full max-w-sm mx-auto space-y-8 mt-10 lg:mt-0 bg-white/10 backdrop-blur-lg border border-white/20 p-8 rounded-3xl shadow-2xl relative z-10">
+                <div className="w-full max-w-sm mx-auto space-y-8 mt-10 lg:mt-0 bg-white/10 backdrop-blur-lg border border-white/20 p-8 rounded-3xl shadow-2xl relative z-10 min-h-[500px] flex flex-col justify-center">
 
-                    {/* Header Text Only */}
+                    {/* Header Text */}
                     <div className="space-y-4 text-center lg:text-left">
                         <div className="space-y-2">
                             <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-white">
-                                {mode === 'login' ? 'Welcome Back!' : 'Start Building.'}
+                                {mode === 'verify' ? 'Check Email' : (mode === 'login' ? 'Welcome Back!' : 'Start Building.')}
                             </h1>
                             <p className="text-blue-100 font-medium">
-                                {mode === 'login' ? 'Enter your details to access your workspace.' : 'Join NanoArtif and automate your sales.'}
+                                {mode === 'verify'
+                                    ? 'We sent a verification code to your email.'
+                                    : (mode === 'login' ? 'Enter your details to access your workspace.' : 'Join NanoArtif and automate your sales.')}
                             </p>
                         </div>
                     </div>
@@ -84,57 +107,84 @@ export default function LoginPage() {
                     {/* Form */}
                     <form action={formAction} className="space-y-6">
                         <input type="hidden" name="auth_mode" value={mode} />
-                        {mode === 'signup' && (
-                            <div className="space-y-2 animate-in slide-in-from-top-4 fade-in duration-300">
-                                <label className="text-xs font-bold uppercase text-blue-100 tracking-wider ml-1">Full Name</label>
+
+                        {mode === 'verify' ? (
+                            <div className="space-y-2 animate-in slide-in-from-right-4 fade-in duration-300">
+                                <label className="text-xs font-bold uppercase text-blue-100 tracking-wider ml-1">Verification Code</label>
                                 <div className="relative group">
-                                    <User className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 group-focus-within:text-[#1E90FF] transition-colors" />
+                                    <Sparkles className="absolute left-4 top-3.5 w-5 h-5 text-yellow-400 animate-pulse" />
                                     <Input
-                                        name="name"
+                                        name="code"
                                         type="text"
                                         required
-                                        className="pl-12 h-12 bg-white border-transparent focus:border-white focus:ring-4 focus:ring-white/20 rounded-xl transition-all text-slate-900 placeholder:text-slate-400"
-                                        placeholder="nama anda"
+                                        maxLength={6}
+                                        className="pl-12 h-12 bg-white border-transparent focus:border-white focus:ring-4 focus:ring-white/20 rounded-xl transition-all text-slate-900 placeholder:text-slate-400 tracking-[0.5em] font-bold text-center text-lg"
+                                        placeholder="000000"
+                                        autoFocus
                                     />
+                                    {/* Hidden email to pass context */}
+                                    <input type="hidden" name="email" value={(state as any)?.email || ''} />
                                 </div>
+                                <p className="text-xs text-blue-200 text-center mt-2">
+                                    Didn't get it? <button type="button" onClick={() => setMode('signup')} className="text-white hover:underline">Resend</button>
+                                </p>
                             </div>
+                        ) : (
+                            <>
+                                {mode === 'signup' && (
+                                    <div className="space-y-2 animate-in slide-in-from-top-4 fade-in duration-300">
+                                        <label className="text-xs font-bold uppercase text-blue-100 tracking-wider ml-1">Full Name</label>
+                                        <div className="relative group">
+                                            <User className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 group-focus-within:text-[#1E90FF] transition-colors" />
+                                            <Input
+                                                name="name"
+                                                type="text"
+                                                required
+                                                className="pl-12 h-12 bg-white border-transparent focus:border-white focus:ring-4 focus:ring-white/20 rounded-xl transition-all text-slate-900 placeholder:text-slate-400"
+                                                placeholder="nama anda"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold uppercase text-blue-100 tracking-wider ml-1">Email Address</label>
+                                    <div className="relative group">
+                                        <Mail className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 group-focus-within:text-[#1E90FF] transition-colors" />
+                                        <Input
+                                            name="email"
+                                            type="email"
+                                            required
+                                            defaultValue={(state as any)?.email || ''} // Preserve email if retrying
+                                            className="pl-12 h-12 bg-white border-transparent focus:border-white focus:ring-4 focus:ring-white/20 rounded-xl transition-all text-slate-900 placeholder:text-slate-400"
+                                            placeholder="name@company.com"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold uppercase text-blue-100 tracking-wider ml-1">Password</label>
+                                    <div className="relative group">
+                                        <Lock className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 group-focus-within:text-[#1E90FF] transition-colors" />
+                                        <Input
+                                            name="password"
+                                            type={showPassword ? 'text' : 'password'}
+                                            required
+                                            minLength={6}
+                                            className="pl-12 pr-12 h-12 bg-white border-transparent focus:border-white focus:ring-4 focus:ring-white/20 rounded-xl transition-all text-slate-900 placeholder:text-slate-400"
+                                            placeholder="••••••••"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-4 top-3.5 text-slate-400 hover:text-[#1E90FF] transition-colors"
+                                        >
+                                            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                        </button>
+                                    </div>
+                                </div>
+                            </>
                         )}
-
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase text-blue-100 tracking-wider ml-1">Email Address</label>
-                            <div className="relative group">
-                                <Mail className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 group-focus-within:text-[#1E90FF] transition-colors" />
-                                <Input
-                                    name="email"
-                                    type="email"
-                                    required
-                                    className="pl-12 h-12 bg-white border-transparent focus:border-white focus:ring-4 focus:ring-white/20 rounded-xl transition-all text-slate-900 placeholder:text-slate-400"
-                                    placeholder="name@company.com"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase text-blue-100 tracking-wider ml-1">Password</label>
-                            <div className="relative group">
-                                <Lock className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 group-focus-within:text-[#1E90FF] transition-colors" />
-                                <Input
-                                    name="password"
-                                    type={showPassword ? 'text' : 'password'}
-                                    required
-                                    minLength={6}
-                                    className="pl-12 pr-12 h-12 bg-white border-transparent focus:border-white focus:ring-4 focus:ring-white/20 rounded-xl transition-all text-slate-900 placeholder:text-slate-400"
-                                    placeholder="••••••••"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-4 top-3.5 text-slate-400 hover:text-[#1E90FF] transition-colors"
-                                >
-                                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                                </button>
-                            </div>
-                        </div>
 
                         {state?.error && (
                             <div className="p-4 bg-red-500/10 border border-red-200/20 rounded-xl text-sm text-white font-bold flex items-center gap-3 animate-in shake backdrop-blur-sm">
@@ -153,7 +203,9 @@ export default function LoginPage() {
                                     <span className="flex items-center gap-2">Processing...</span>
                                 ) : (
                                     <span className="flex items-center gap-2">
-                                        {mode === 'login' ? 'Sign In to Dashboard' : 'Create Free Account'}
+                                        {mode === 'verify'
+                                            ? 'Verify & Continue'
+                                            : (mode === 'login' ? 'Sign In to Dashboard' : 'Create Free Account')}
                                         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                                     </span>
                                 )}
@@ -162,17 +214,19 @@ export default function LoginPage() {
                     </form>
 
                     {/* Footer Toggle */}
-                    <div className="text-center">
-                        <p className="text-sm font-medium text-blue-100">
-                            {mode === 'login' ? "New here?" : "Already member?"}
-                            <button
-                                onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
-                                className="ml-2 text-white font-bold hover:text-white/80 underline underline-offset-4 focus:outline-none transition-all"
-                            >
-                                {mode === 'login' ? 'Create Account' : 'Login Now'}
-                            </button>
-                        </p>
-                    </div>
+                    {mode !== 'verify' && (
+                        <div className="text-center">
+                            <p className="text-sm font-medium text-blue-100">
+                                {mode === 'login' ? "New here?" : "Already member?"}
+                                <button
+                                    onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
+                                    className="ml-2 text-white font-bold hover:text-white/80 underline underline-offset-4 focus:outline-none transition-all"
+                                >
+                                    {mode === 'login' ? 'Create Account' : 'Login Now'}
+                                </button>
+                            </p>
+                        </div>
+                    )}
 
                     <div className="pt-8 border-t border-white/10 text-center lg:text-left">
                         <p className="text-[10px] text-blue-200 font-medium uppercase tracking-widest">
