@@ -1,4 +1,5 @@
 import prisma from './prisma';
+import { BufferJSON } from '@whiskeysockets/baileys';
 
 /**
  * Database-based session store for Baileys
@@ -16,7 +17,7 @@ export class DatabaseSessionStore {
      */
     async saveState(state: any) {
         try {
-            const serialized = JSON.stringify(state);
+            const serialized = BufferJSON.stringify(state);
 
             await prisma.whatsAppSession.upsert({
                 where: { sessionId: this.sessionId },
@@ -51,8 +52,8 @@ export class DatabaseSessionStore {
                 return null;
             }
 
-            const state = JSON.parse(session.sessionData);
-            console.log(`[Session] Loaded for ${this.sessionId}`);
+            const state = BufferJSON.parse(session.sessionData);
+            console.log(`[Session] Loaded and parsed for ${this.sessionId}`);
             return state;
         } catch (error) {
             console.error('[Session] Load error:', error);

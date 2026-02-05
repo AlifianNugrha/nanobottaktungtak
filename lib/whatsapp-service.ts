@@ -194,9 +194,23 @@ export async function createWhatsAppSession(sessionId: string) {
         }
 
         if (connection === 'close') {
-            const shouldReconnect = (lastDisconnect?.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut;
+            const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
+            const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
 
-            console.log(`[Session ${sessionId}] Connection closed. Should reconnect:`, shouldReconnect);
+            console.log(`[Session ${sessionId}] Connection closed (Status: ${statusCode}). Should reconnect:`, shouldReconnect);
+
+            if (statusCode === DisconnectReason.badSession || statusCode === 401) {
+                console.log(`[Session ${sessionId}] 🚨 Unrecoverable error (Bad Session). Clearing session data.`);
+                const sessionStore = new DatabaseSessionStore(sessionId);
+                await sessionStore.deleteState().catch(() => { });
+                activeSessions.delete(sessionId);
+
+                await prisma.integration.update({
+                    where: { id: sessionId },
+                    data: { status: 'disconnected' }
+                }).catch(() => { });
+                return;
+            }
 
             if (shouldReconnect) {
                 console.log(`[Session ${sessionId}] Attempting to reconnect...`);
@@ -225,7 +239,7 @@ export async function createWhatsAppSession(sessionId: string) {
                 // Wait a bit before reconnecting
                 setTimeout(() => {
                     createWhatsAppSession(sessionId);
-                }, 3000);
+                }, 5000);
             } else {
                 console.log(`[Session ${sessionId}] Logged out, not reconnecting`);
                 session.status = 'disconnected';
