@@ -332,42 +332,33 @@ export default function IntegrationPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {/* Tombol Reconnect untuk WhatsApp Disconnected */}
-                      {platform === 'WhatsApp' && (bot.config as any)?.status === 'Disconnected' && (
-                        <Button variant="ghost" size="icon" className="text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50" onClick={() => {
-                          setSelectedPlatform('WhatsApp');
-                          setIsModalOpen(true);
-                        }}>
-                          <RefreshCw className="w-4 h-4" />
+                      {/* Tombol Connect/Scan untuk WhatsApp */}
+                      {platform === 'WhatsApp' && (bot.config as any)?.status !== 'Active' && (bot.config as any)?.status !== 'Connected' && (
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedPlatform('WhatsApp');
+                            handleConnectWhatsApp(bot.id);
+                            setIsModalOpen(true);
+                          }}
+                          className="h-9 px-4 text-xs font-bold gap-2 border-green-200 text-green-600 hover:bg-green-50 rounded-xl"
+                        >
+                          <QrCode className="w-3.5 h-3.5" />
+                          Connect
                         </Button>
                       )}
 
                       {/* Tombol View Code untuk Widget */}
                       {platform === 'Website' && (
                         <Button variant="ghost" size="icon" className="text-blue-500 hover:text-blue-600 hover:bg-blue-50" onClick={() => {
-                          // Show copy code modal again
                           setSelectedPlatform('Website');
-                          setConfigStep('success'); // Jumpt to success/copy screen
+                          setConfigStep('success');
                           setIsModalOpen(true);
                         }}>
                           <ExternalLink className="w-4 h-4" />
                         </Button>
                       )}
 
-                      <Button variant="ghost" size="icon" onClick={() => {
-                        // REFACTORED: Settings now acts as "Connect/Reconnect"
-                        if (platform === 'WhatsApp') {
-                          handleConnectWhatsApp(bot.id); // Trigger session creation for THIS bot
-                          setSelectedPlatform('WhatsApp');
-                          setIsModalOpen(true);
-                          // We let handleConnectWhatsApp handle the step change (it sets to 'qr' on success)
-                          // But we might need to show loading state
-                        } else {
-                          setSelectedPlatform(platform || 'WhatsApp');
-                          setConfigStep('input');
-                          setIsModalOpen(true);
-                        }
-                      }} className="text-muted-foreground hover:text-primary"><Settings2 className="w-4 h-4" /></Button>
                       <Button variant="ghost" size="icon" onClick={() => handleDelete(bot.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
                     </div>
                   </div>
@@ -519,31 +510,12 @@ export default function IntegrationPage() {
                             alert("Please select a bot first!");
                             return;
                           }
-
-                          setIsSaving(true);
-                          // Call session route which now handles 'botId' linking
-                          // We essentially create a session/integration entry and LINK it to the existig bot
-                          const response = await fetch('/api/whatsapp/session', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              name: 'WhatsApp Connection',
-                              botId: botId
-                            })
-                          });
-
-                          setIsSaving(false);
-                          if (response.ok) {
-                            setIsModalOpen(false);
-                            fetchIntegrations(); // Refresh list, the bot should now appear
-                          } else {
-                            alert("Failed to create connection slot");
-                          }
+                          handleConnectWhatsApp(botId);
                         }}
                         disabled={isSaving}
                         className="w-full h-12 bg-green-600 hover:bg-green-700 font-bold text-white rounded-xl shadow-lg"
                       >
-                        {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Create Connection & Link Bot'}
+                        {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Start Connection & Get QR'}
                       </Button>
                     </div>
                   ) : (
