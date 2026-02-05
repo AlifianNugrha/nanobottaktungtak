@@ -13,9 +13,16 @@ import {
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { MoreHorizontal, Plus, Search, Loader2 } from 'lucide-react';
+import { MoreHorizontal, Plus, Search, Loader2, Trash, Crown } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getUsers } from '@/app/actions/user-actions';
+import { deleteUserById, grantProAccess } from '@/app/actions/platform-actions';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const getRoleBadgeColor = (role: string) => {
   switch (role) {
@@ -98,11 +105,9 @@ export default function Users() {
               <TableRow className="hover:bg-transparent">
                 <TableHead className="text-muted-foreground">Name</TableHead>
                 <TableHead className="text-muted-foreground">Email</TableHead>
-                <TableHead className="text-muted-foreground">Role</TableHead>
-                <TableHead className="text-muted-foreground">Status</TableHead>
-                <TableHead className="text-muted-foreground">
-                  Join Date
-                </TableHead>
+                <TableHead className="text-muted-foreground">Plan</TableHead>
+                <TableHead className="text-muted-foreground w-[200px]">Token Usage</TableHead>
+                <TableHead className="text-muted-foreground">Subscription</TableHead>
                 <TableHead className="text-muted-foreground text-right">
                   Actions
                 </TableHead>
@@ -111,7 +116,7 @@ export default function Users() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-10">
+                  <TableCell colSpan={7} className="text-center py-10">
                     <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
                   </TableCell>
                 </TableRow>
@@ -122,32 +127,91 @@ export default function Users() {
                     className="border-b border-border hover:bg-secondary/50 transition-colors"
                   >
                     <TableCell className="text-foreground font-medium">
-                      {user.name || 'No Name'}
+                      <div className="flex flex-col">
+                        <span>{user.name || 'No Name'}</span>
+                        <span className="text-xs text-muted-foreground md:hidden">{user.email}</span>
+                      </div>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
+                    <TableCell className="text-muted-foreground hidden md:table-cell">
                       {user.email}
                     </TableCell>
                     <TableCell>
                       <Badge className={getRoleBadgeColor(user.role)}>
-                        {user.role === 'PRO_USER' ? 'Pro' : user.role === 'USER' ? 'Free' : user.role}
+                        {user.subscriptionPlan === 'Pro' || user.role === 'PRO_USER' ? 'Pro Plan' : (user.subscriptionPlan === 'Enterprise' ? 'Enterprise' : 'Free Tier')}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge className={getStatusBadgeColor(user.status)}>
-                        {user.status}
-                      </Badge>
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>{user.currentTokenUsage || 0} used</span>
+                          <span>{user.maxTokenLimit > 5000 ? user.maxTokenLimit : (user.role === 'PRO_USER' ? 100000 : 5000)} limit</span>
+                        </div>
+                        <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${user.role === 'PRO_USER' ? 'bg-purple-500' : 'bg-blue-500'}`}
+                            style={{ width: `${Math.min(100, ((user.currentTokenUsage || 0) / (user.maxTokenLimit > 5000 ? user.maxTokenLimit : (user.role === 'PRO_USER' ? 100000 : 5000))) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {user.joinDate}
+                    <TableCell className="text-xs text-muted-foreground">
+                      {user.subscriptionStart ? (
+                        <div className="flex flex-col">
+                          <span>Since: {new Date(user.subscriptionStart).toLocaleDateString()}</span>
+                          {user.subscriptionEnd && (
+                            <span className="text-amber-500">Exp: {new Date(user.subscriptionEnd).toLocaleDateString()}</span>
+                          )}
+                        </div>
+                      ) : (
+                        user.role === 'PRO_USER' ? <span className="text-purple-400 font-medium">Legacy Pro</span> : <span className="italic">No Active Sub</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-muted-foreground hover:text-foreground"
-                      >
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="bg-slate-900 border-slate-800 text-slate-200 shadow-xl">
+                          {user.role !== 'PRO_USER' && (
+                            <DropdownMenuItem
+                              className="text-purple-400 focus:text-purple-300 focus:bg-purple-500/10 cursor-pointer flex items-center gap-2"
+                              onClick={async () => {
+                                if (confirm(`Activate Pro (1 Month) for ${user.name || user.email}?`)) {
+                                  setIsLoading(true);
+                                  const result = await grantProAccess(user.id, 30);
+                                  if (result.success) {
+                                    // Reload users
+                                    const res = await getUsers();
+                                    if (res.success && res.data) {
+                                      setUsers(res.data);
+                                    }
+                                  }
+                                  setIsLoading(false);
+                                }
+                              }}
+                            >
+                              <Crown className="w-4 h-4" />
+                              Activate Pro (1 Month)
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem
+                            className="text-red-400 focus:text-red-300 focus:bg-red-500/10 cursor-pointer flex items-center gap-2"
+                            onClick={async () => {
+                              if (confirm('Are you sure you want to delete this user? This cannot be undone.')) {
+                                setIsLoading(true);
+                                await deleteUserById(user.id);
+                                setUsers(users.filter(u => u.id !== user.id));
+                                setIsLoading(false);
+                              }
+                            }}
+                          >
+                            <Trash className="w-4 h-4" />
+                            Delete User
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))

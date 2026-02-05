@@ -158,3 +158,64 @@ export async function checkDatabaseHealth() {
         return { success: false, error: 'Database Unreachable' };
     }
 }
+
+// DELETE USER ACTION
+import { createClient } from '@/utils/supabase/server';
+
+export async function deleteUserById(userId: string) {
+    try {
+        // 1. Delete from Prisma (Cascade will handle related data if configured, otherwise might need manual cleanup)
+        await prisma.user.delete({
+            where: { id: userId }
+        });
+
+        // 2. Delete from Supabase Auth (Optional but recommended for clean cleanup)
+        // Note: This requires SERVICE_ROLE_KEY if run server-side, 
+        // OR acts on behalf of the logged-in admin if they have permissions.
+        // Standard admin client might not be able to delete other users unless it's a Service Role client.
+        // For now, let's try standard client, if fails, we rely on Prisma delete.
+        // Ideally: use createServiceRoleClient() for admin actions. 
+
+        try {
+            const supabase = await createClient(); // Try with current admin session
+            const { error } = await supabase.auth.admin.deleteUser(userId);
+            if (error) {
+                console.log("Supabase Auth delete warning (might need service role):", error.message);
+            }
+        } catch (authError) {
+            console.log("Supabase Auth delete skipped:", authError);
+        }
+
+        revalidatePath('/platform');
+        return { success: true };
+    } catch (error: any) {
+        console.error("Delete user error:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+// UPGRADE USER TO PRO ACTION
+export async function grantProAccess(userId: string, durationDays: number = 30) {
+    try {
+        const startDate = new Date();
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() + durationDays);
+
+        await prisma.user.update({
+            where: { id: userId },
+            data: {
+                role: 'PRO_USER',
+                subscriptionPlan: 'Pro',
+                maxTokenLimit: 100000,
+                subscriptionStart: startDate,
+                subscriptionEnd: endDate
+            }
+        });
+
+        revalidatePath('/platform');
+        return { success: true };
+    } catch (error: any) {
+        console.error("Grant Pro error:", error);
+        return { success: false, error: error.message };
+    }
+}

@@ -1,8 +1,11 @@
 import makeWASocket, {
     DisconnectReason,
-    useMultiFileAuthState,
     fetchLatestBaileysVersion,
-    makeCacheableSignalKeyStore
+    makeCacheableSignalKeyStore,
+    BufferJSON,
+    initAuthCreds,
+    AuthenticationCreds,
+    SignalDataTypeMap
 } from '@whiskeysockets/baileys';
 import { Boom } from '@hapi/boom';
 import pino from 'pino';
@@ -11,13 +14,7 @@ import fs from 'fs';
 import prisma from './prisma';
 import Groq from 'groq-sdk';
 import { getConversationHistory, saveMessageToHistory, formatHistoryForAI, ensureCustomerExists } from './conversation-history';
-
-const sessionsDir = path.join(process.cwd(), 'baileys-sessions');
-
-// Ensure sessions directory exists
-if (!fs.existsSync(sessionsDir)) {
-    fs.mkdirSync(sessionsDir, { recursive: true });
-}
+import { DatabaseSessionStore } from './whatsapp-session-store';
 
 export interface WhatsAppSession {
     sessionId: string;
@@ -28,14 +25,35 @@ export interface WhatsAppSession {
 
 const activeSessions = new Map<string, WhatsAppSession>();
 
-export async function createWhatsAppSession(sessionId: string) {
-    const sessionPath = path.join(sessionsDir, sessionId);
+// Database-backed auth state (replaces useMultiFileAuthState)
+async function useDatabaseAuthState(store: DatabaseSessionStore, savedState: any) {
+    let creds: AuthenticationCreds;
+    let keys: any = {};
 
-    if (!fs.existsSync(sessionPath)) {
-        fs.mkdirSync(sessionPath, { recursive: true });
+    if (savedState) {
+        creds = savedState.creds;
+        keys = savedState.keys || {};
+    } else {
+        creds = initAuthCreds();
     }
 
-    const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
+    const saveCreds = async () => {
+        await store.saveState({ creds, keys });
+    };
+
+    return {
+        state: { creds, keys },
+        saveCreds
+    };
+}
+
+export async function createWhatsAppSession(sessionId: string) {
+    const sessionStore = new DatabaseSessionStore(sessionId);
+
+    // Load or initialize auth state
+    const savedState = await sessionStore.loadState();
+    const { state, saveCreds } = await useDatabaseAuthState(sessionStore, savedState);
+
     const { version } = await fetchLatestBaileysVersion();
 
     const sock = makeWASocket({
@@ -207,10 +225,9 @@ export async function deleteSession(sessionId: string) {
         activeSessions.delete(sessionId);
     }
 
-    const sessionPath = path.join(sessionsDir, sessionId);
-    if (fs.existsSync(sessionPath)) {
-        fs.rmSync(sessionPath, { recursive: true, force: true });
-    }
+    // Delete from database
+    const sessionStore = new DatabaseSessionStore(sessionId);
+    await sessionStore.deleteState();
 }
 
 export async function sendMessage(sessionId: string, to: string, message: string) {

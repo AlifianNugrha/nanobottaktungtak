@@ -35,8 +35,15 @@ model User {
   campaigns   Campaign[]
   
   // Usage Tracking
-  aiMessageCount Int      @default(0)
-  lastMessageAt  DateTime @default(now())
+  aiMessageCount  Int      @default(0)
+  lastMessageAt   DateTime @default(now())
+  
+  // Subscription & Limits
+  subscriptionPlan String   @default("Free") // 'Free', 'Pro', 'Enterprise'
+  subscriptionStart DateTime?
+  subscriptionEnd   DateTime?
+  maxTokenLimit     Int      @default(5000) // Default limit for Free tier
+  currentTokenUsage Int      @default(0)    // Reset monthly
 
   @@map("users")
 }
@@ -210,4 +217,15 @@ model CampaignRecipient {
   sentAt      DateTime?
   
   @@map("campaign_recipients")
+}
+
+// === WHATSAPP SESSION STORAGE (For Baileys) ===
+model WhatsAppSession {
+  id          String   @id @default(uuid())
+  sessionId   String   @unique // e.g., integrationId or userId
+  sessionData String   @db.Text // JSON string of Baileys auth state
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("whatsapp_sessions")
 }

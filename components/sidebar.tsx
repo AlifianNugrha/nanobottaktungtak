@@ -34,7 +34,7 @@ export function Sidebar({ isPro, userName, role, userEmail }: { isPro: boolean; 
   const navCategories: NavCategory[] = [
     {
       category: t('Premium Access'),
-      items: [{ href: '/admin/pricing', label: isPro ? t('Pro Feature Active') : t('Upgrade to Pro'), icon: Sparkles, premium: true }],
+      items: [{ href: isPro ? '/dashboard' : '/dashboard/upgrade', label: isPro ? t('Pro Feature Active') : t('Upgrade to Pro'), icon: Sparkles, premium: true }],
     },
     {
       category: t('Overview'),
