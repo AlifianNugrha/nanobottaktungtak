@@ -39,6 +39,7 @@ export function InboxClient({ initialConversations, userId }: { initialConversat
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [messageInput, setMessageInput] = useState('');
     const [isSending, setIsSending] = useState(false);
+    const [mounted, setMounted] = useState(false);
     const router = useRouter();
     const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -46,6 +47,7 @@ export function InboxClient({ initialConversations, userId }: { initialConversat
 
     // Auto-scroll to bottom of chat
     useEffect(() => {
+        setMounted(true);
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
@@ -164,7 +166,7 @@ export function InboxClient({ initialConversations, userId }: { initialConversat
                                                 {conv.contactNumber.replace('@s.whatsapp.net', '')}
                                             </span>
                                             <span className="text-[10px] text-slate-400">
-                                                {new Date(conv.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                {mounted ? new Date(conv.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                                             </span>
                                         </div>
                                         <p className="text-xs text-slate-500 truncate line-clamp-1">
@@ -241,7 +243,7 @@ export function InboxClient({ initialConversations, userId }: { initialConversat
                                     )}>
                                         <p className="whitespace-pre-wrap">{msg.content}</p>
                                         <span className={cn("text-[9px] block mt-1 opacity-70", isUser ? "text-right" : "text-left")}>
-                                            {new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            {mounted ? new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                                         </span>
                                     </div>
                                 </div>

@@ -14,9 +14,11 @@ import {
     Legend,
     ResponsiveContainer,
 } from 'recharts';
-import { Users, TrendingUp, Activity, Zap, Bot, Crown } from 'lucide-react';
+import { Users, TrendingUp, Activity, Zap, Bot, Crown, ArrowRight, MessageSquare, Settings } from 'lucide-react';
 import { getDashboardStats } from '@/app/actions/dashboard-actions';
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { Button } from './ui/button';
 
 const dashboardData = [
     { month: 'Jan', users: 2400, revenue: 2210, engagement: 2290 },
@@ -27,7 +29,7 @@ const dashboardData = [
     { month: 'Jun', users: 3800, revenue: 3800, engagement: 2500 },
 ];
 
-export function DashboardClient({ isPro, userName, userEmail, companyName }: { isPro: boolean; userName: string; userEmail: string; companyName: string }) {
+export function DashboardClient({ isPro, userName, userEmail, companyName, userImage }: { isPro: boolean; userName: string; userEmail: string; companyName: string; userImage?: string }) {
     const [statsData, setStatsData] = useState({
         totalAgents: 0,
         totalBots: 0,
@@ -104,8 +106,12 @@ export function DashboardClient({ isPro, userName, userEmail, companyName }: { i
 
                 {/* Profile Card Summary */}
                 <div className="bg-white p-3 rounded-2xl border border-border shadow-sm flex items-center gap-4 min-w-[300px]">
-                    <div className="w-12 h-12 bg-[#1E90FF] rounded-xl flex items-center justify-center text-white font-bold text-lg uppercase shadow-lg shadow-[#1E90FF]/20">
-                        {userName ? userName.substring(0, 2) : 'US'}
+                    <div className="w-12 h-12 bg-[#1E90FF] rounded-xl flex items-center justify-center text-white font-bold text-lg uppercase shadow-lg shadow-[#1E90FF]/20 overflow-hidden">
+                        {userImage ? (
+                            <img src={userImage} alt={userName} className="w-full h-full object-cover" />
+                        ) : (
+                            userName ? userName.substring(0, 2) : 'US'
+                        )}
                     </div>
                     <div className="flex-1 overflow-hidden">
                         <p className="font-bold text-sm text-foreground truncate">{userName}</p>
@@ -116,6 +122,7 @@ export function DashboardClient({ isPro, userName, userEmail, companyName }: { i
                     </div>
                 </div>
             </div>
+
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

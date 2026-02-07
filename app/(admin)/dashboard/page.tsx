@@ -11,6 +11,7 @@ export default async function DashboardPage() {
   let userName = 'User NanoArtif';
   let userEmail = user?.email || '';
   let companyName = '';
+  let userImage = '';
   let role = 'USER';
 
   if (user) {
@@ -22,8 +23,9 @@ export default async function DashboardPage() {
       role = dbUser.role;
       userName = dbUser.name || user.email?.split('@')[0] || 'User NanoArtif';
       companyName = dbUser.companyName || '';
+      userImage = dbUser.image || '';
     }
   }
 
-  return <DashboardClient isPro={role === 'PRO_USER' || role === 'ADMIN'} userName={userName} userEmail={userEmail} companyName={companyName} />;
+  return <DashboardClient isPro={role === 'PRO_USER' || role === 'ADMIN'} userName={userName} userEmail={userEmail} companyName={companyName} userImage={userImage} />;
 }

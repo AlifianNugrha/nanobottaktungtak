@@ -2,10 +2,7 @@ import makeWASocket, {
     DisconnectReason,
     fetchLatestBaileysVersion,
     makeCacheableSignalKeyStore,
-    BufferJSON,
-    initAuthCreds,
-    AuthenticationCreds,
-    SignalDataTypeMap
+    useMultiFileAuthState,
 } from '@whiskeysockets/baileys';
 import { Boom } from '@hapi/boom';
 import pino from 'pino';
@@ -25,128 +22,32 @@ export interface WhatsAppSession {
 
 const activeSessions = new Map<string, WhatsAppSession>();
 
-// Flag to track if sessions have been restored
-let sessionsRestored = false;
-
 /**
- * Restore all existing WhatsApp sessions from database on server startup
- * This ensures sessions persist across Railway deployments
+ * Reverted to simple file-based auth for local stability
  */
-export async function restoreExistingSessions() {
-    if (sessionsRestored) {
-        console.log('[Session Restore] Already restored, skipping...');
-        return;
-    }
-
-    try {
-        console.log('[Session Restore] Starting session restoration...');
-
-        // Get all integrations that have WhatsApp sessions and still exist in integration table
-        const sessions = await prisma.whatsAppSession.findMany({
-            select: {
-                sessionId: true,
-                updatedAt: true
-            }
-        });
-
-        console.log(`[Session Restore] Found ${sessions.length} sessions in database`);
-
-        // Restore each session
-        for (const session of sessions) {
-            try {
-                // Check if integration still exists
-                const integration = await prisma.integration.findUnique({
-                    where: { id: session.sessionId }
-                });
-
-                if (!integration) {
-                    console.log(`[Session Restore] Integration ${session.sessionId} no longer exists. Cleaning up orphaned session data...`);
-                    await prisma.whatsAppSession.delete({ where: { sessionId: session.sessionId } }).catch(() => { });
-                    continue;
-                }
-
-                console.log(`[Session Restore] Restoring session: ${session.sessionId} (${integration.name})`);
-
-                // Check if session is already active
-                if (activeSessions.has(session.sessionId)) {
-                    console.log(`[Session Restore] Session ${session.sessionId} already active, skipping...`);
-                    continue;
-                }
-
-                // Recreate the WhatsApp connection
-                await createWhatsAppSession(session.sessionId);
-
-                // Small delay to prevent overwhelming the server
-                await new Promise(resolve => setTimeout(resolve, 1000));
-            } catch (error) {
-                console.error(`[Session Restore] Failed to restore session ${session.sessionId}:`, error);
-            }
-        }
-
-        sessionsRestored = true;
-        console.log('[Session Restore] Session restoration complete');
-    } catch (error) {
-        console.error('[Session Restore] Error during session restoration:', error);
-    }
-}
-
-// Database-backed auth state (replaces useMultiFileAuthState)
-async function useDatabaseAuthState(store: DatabaseSessionStore, savedState: any) {
-    let creds: AuthenticationCreds;
-    let keys: any = {};
-
-    if (savedState) {
-        creds = savedState.creds;
-        keys = savedState.keys || {};
-    } else {
-        creds = initAuthCreds();
-    }
-
-    const saveCreds = async () => {
-        await store.saveState({ creds, keys });
-    };
-
-    return {
-        state: { creds, keys },
-        saveCreds
-    };
-}
-
 export async function createWhatsAppSession(sessionId: string) {
-    // 1. Cleanup existing socket if any to prevent "double connection" 
-    // which causes the "spinning loop" and connection errors on WA.
+    const sessionDir = path.join(process.cwd(), 'baileys-sessions', sessionId);
+
+    // 1. Cleanup existing socket if any
     const existing = activeSessions.get(sessionId);
     if (existing?.sock) {
-        console.log(`[Session ${sessionId}] Closing existing socket before recreating...`);
         try {
             existing.sock.ev.removeAllListeners('connection.update');
             existing.sock.ev.removeAllListeners('creds.update');
             existing.sock.ev.removeAllListeners('messages.upsert');
             existing.sock.end(undefined);
-        } catch (e) {
-            console.error('Error closing old socket:', e);
-        }
+        } catch (e) { }
     }
 
-    const sessionStore = new DatabaseSessionStore(sessionId);
-
-    // Load or initialize auth state
-    const savedState = await sessionStore.loadState();
-    const { state, saveCreds } = await useDatabaseAuthState(sessionStore, savedState);
-
-    // Remove explicit version fetch to use the library's stable default
-    // const { version } = await fetchLatestBaileysVersion();
+    const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
+    const { version } = await fetchLatestBaileysVersion();
 
     const sock = makeWASocket({
-        // version, // Let library use stable internal default
+        version,
         logger: pino({ level: 'silent' }),
         printQRInTerminal: false,
-        auth: {
-            creds: state.creds,
-            keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' })),
-        },
-        // Using a highly standard Windows/Chrome fingerprint to avoid "Check Internet" error on phone
-        browser: ['Windows', 'Chrome', '114.0.5735.110'],
+        auth: state,
+        browser: ['NanoArtif', 'Chrome', '110.0.0'],
         connectTimeoutMs: 60000,
         retryRequestDelayMs: 5000,
         keepAliveIntervalMs: 30000,
@@ -163,12 +64,6 @@ export async function createWhatsAppSession(sessionId: string) {
     // QR Code handler
     sock.ev.on('connection.update', async (update: any) => {
         const { connection, lastDisconnect, qr } = update;
-
-        console.log(`[Connection Update] Session ${sessionId}:`, {
-            connection,
-            qr: qr ? 'QR Generated' : 'No QR',
-            lastDisconnect: lastDisconnect ? 'Yes' : 'No'
-        });
 
         if (qr) {
             session.qr = qr;
@@ -202,8 +97,10 @@ export async function createWhatsAppSession(sessionId: string) {
 
             if (statusCode === DisconnectReason.badSession || statusCode === 401) {
                 console.log(`[Session ${sessionId}] 🚨 Unrecoverable error (Bad Session). Clearing session data.`);
-                const sessionStore = new DatabaseSessionStore(sessionId);
-                await sessionStore.deleteState().catch(() => { });
+                const sessionDir = path.join(process.cwd(), 'baileys-sessions', sessionId);
+                if (fs.existsSync(sessionDir)) {
+                    fs.rmSync(sessionDir, { recursive: true, force: true });
+                }
                 activeSessions.delete(sessionId);
 
                 await prisma.integration.update({
@@ -237,10 +134,10 @@ export async function createWhatsAppSession(sessionId: string) {
                     }
                 }
 
-                // Wait longer before reconnecting to let resources clear
+                // Wait a bit before reconnecting
                 setTimeout(() => {
                     createWhatsAppSession(sessionId);
-                }, 10000);
+                }, 3000);
             } else {
                 console.log(`[Session ${sessionId}] Logged out, not reconnecting`);
                 session.status = 'disconnected';
@@ -388,9 +285,9 @@ export async function createWhatsAppSession(sessionId: string) {
                     await sock.sendMessage(from, { text: response });
                 }
             } else {
-                // Default auto-reply if no agent configured
-                const defaultReply = `Terima kasih atas pesan Anda: "${messageText}"\n\nBot ini sedang aktif dan siap membantu! 🤖`;
-                await sock.sendMessage(from, { text: defaultReply });
+                // If no agent is configured, stay silent. 
+                // This allows the user to use WhatsApp for manual chat or broadcast only.
+                console.log(`[Session ${sessionId}] No AI agent linked. Staying silent for message from ${from}`);
             }
         } catch (error) {
             console.error('Error handling message:', error);
@@ -418,6 +315,29 @@ export async function deleteSession(sessionId: string) {
     // Delete from database
     const sessionStore = new DatabaseSessionStore(sessionId);
     await sessionStore.deleteState();
+}
+
+/**
+ * Restore all sessions that should be active
+ */
+export async function restoreExistingSessions() {
+    try {
+        const integrations = await prisma.integration.findMany({
+            where: {
+                platform: 'WhatsApp',
+                status: 'connected'
+            }
+        });
+
+        console.log(`[Service] Found ${integrations.length} sessions to restore`);
+
+        for (const integration of integrations) {
+            console.log(`[Service] Restoring session: ${integration.id} (${integration.name})`);
+            await createWhatsAppSession(integration.id);
+        }
+    } catch (error) {
+        console.error('[Service] Error restoring sessions:', error);
+    }
 }
 
 export async function sendMessage(sessionId: string, to: string, message: string) {
@@ -493,15 +413,13 @@ async function generateAgentResponse(agent: any, userMessage: string, history: a
         const config = agent.config || {};
         let systemPrompt = config.instructions || `Anda adalah ${agent.name}. Asisten toko yang ramah.`;
 
-        // Inject CUSTOMER PROFILE (Long-term memory)
+        // Inject CUSTOMER PROFILE (Referesi saja, jangan kaku)
         if (customer) {
-            systemPrompt += `\n\n=== 👤 INFORMASI CUSTOMER (INGATAN KAMU) ===\nKamu sedang berbicara dengan:
-- Nama: ${customer.name || 'Belum tahu'}
+            systemPrompt += `\n\n=== 👤 KONTEKS CUSTOMER (REFERENSI DATA) ===
+- Nama Terdaftar: ${customer.name || 'Belum tahu'}
 - No. Telp: ${customer.phone}
-- Status: ${customer.status}
-${customer.email ? `- Email: ${customer.email}` : ''}
 
-INGAT: Sapu user dengan namanya jika sudah tahu. Jangan tanya nama lagi jika sudah tertulis di atas.`;
+PENTING: Nama di atas adalah data dari database. Jika di dalam percakapan (Chat History) user memperkenalkan diri dengan nama lain (misal: "Nama saya Bapak Rangga"), kamu WAJIB menggunakan nama yang disebut user di chat tersebut. Abaikan data database jika berbeda dengan pengakuan user di chat.`;
         }
 
         // Inject KNOWLEDGE BASE

@@ -9,6 +9,7 @@ export async function AdminLayout({ children }: { children: React.ReactNode }) {
 
   let role = 'USER';
   let userName = 'User NanoArtif';
+  let userImage = '';
 
   if (user) {
     const dbUser = await prisma.user.findUnique({
@@ -17,6 +18,7 @@ export async function AdminLayout({ children }: { children: React.ReactNode }) {
     if (dbUser) {
       role = dbUser.role;
       userName = dbUser.name || user.email?.split('@')[0] || 'User NanoArtif';
+      userImage = dbUser.image || '';
     }
   }
 
@@ -24,7 +26,7 @@ export async function AdminLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-background font-jakarta">
-      <Sidebar isPro={isPro} userName={userName} role={role} userEmail={user?.email} />
+      <Sidebar isPro={isPro} userName={userName} role={role} userEmail={user?.email} userImage={userImage} />
       <main className="flex-1 w-full min-w-0 overflow-x-hidden p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
           {children}

@@ -67,8 +67,11 @@ export async function POST(req: Request) {
                 });
                 stats.sent++;
 
-                // Random Delay (1-3 seconds) to be safe between batch items
-                await new Promise(r => setTimeout(r, 1500));
+                // Random Delay to be safe between batch items
+                const min = (campaign as any).minDelay || 2;
+                const max = (campaign as any).maxDelay || 5;
+                const randomDelay = Math.floor(Math.random() * (max - min + 1) + min) * 1000;
+                await new Promise(r => setTimeout(r, randomDelay));
 
             } catch (err: any) {
                 console.error(`Failed to send to ${recipient.customerPhone}:`, err);

@@ -22,6 +22,7 @@ model User {
   email     String   @unique
   name      String?
   companyName String?
+  image     String?
   role      Role     @default(USER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -196,6 +197,8 @@ model Campaign {
   name            String
   messageTemplate String   @db.Text
   status          String   @default("draft") // 'draft', 'scheduled', 'sending', 'completed', 'failed'
+  minDelay        Int      @default(2)       // Jeda minimal (detik)
+  maxDelay        Int      @default(5)       // Jeda maksimal (detik)
   scheduledAt     DateTime?
   userId          String
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -14,7 +14,8 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { useState, useEffect } from 'react';
-import { Check, Crown, Loader2, AlertTriangle } from 'lucide-react';
+import { Check, Crown, Loader2, AlertTriangle, Upload, User, Trash2 } from 'lucide-react';
+import { useRef } from 'react';
 
 import { updateProfile } from '@/app/actions/user-actions';
 import { updateUserPassword, deleteUserAccount } from '@/app/actions/auth-actions';
@@ -31,7 +32,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog"
 
-export function SettingsClient({ userName, userEmail, companyName, isPro }: { userName: string; userEmail: string; companyName: string; isPro: boolean }) {
+export function SettingsClient({ userName, userEmail, companyName, isPro, userImage }: { userName: string; userEmail: string; companyName: string; isPro: boolean; userImage?: string }) {
     const [saved, setSaved] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const router = useRouter();
@@ -54,8 +55,34 @@ export function SettingsClient({ userName, userEmail, companyName, isPro }: { us
         name: userName,
         email: userEmail,
         companyName: companyName,
+        image: userImage || '',
         timezone: 'UTC',
     });
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const { supabase } = require('@/lib/supabase-client');
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        try {
+            const fileName = `profile-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
+            const { data, error } = await supabase.storage.from('products').upload(fileName, file);
+            if (error) throw error;
+
+            const { data: publicUrlData } = supabase.storage.from('products').getPublicUrl(fileName);
+            if (publicUrlData) {
+                setFormData({ ...formData, image: publicUrlData.publicUrl });
+            }
+        } catch (err: any) {
+            console.error(err);
+            alert('Failed to upload image: ' + err.message);
+        }
+        setIsUploading(false);
+    };
 
     useEffect(() => {
         setMounted(true);
@@ -65,7 +92,8 @@ export function SettingsClient({ userName, userEmail, companyName, isPro }: { us
         setIsSaving(true);
         const res = await updateProfile({
             name: formData.name,
-            companyName: formData.companyName
+            companyName: formData.companyName,
+            image: formData.image
         });
 
         setIsSaving(false);
@@ -144,6 +172,46 @@ export function SettingsClient({ userName, userEmail, companyName, isPro }: { us
                 </div>
 
                 <div className="p-6 space-y-6">
+                    {/* Avatar Upload */}
+                    <div className="flex flex-col md:flex-row items-center gap-6 pb-6 border-b border-border">
+                        <div className="relative group">
+                            <div className="w-24 h-24 rounded-full bg-secondary border-2 border-dashed border-border flex items-center justify-center overflow-hidden relative">
+                                {formData.image ? (
+                                    <img src={formData.image} alt="Profile" className="w-full h-full object-cover" />
+                                ) : (
+                                    <User className="w-10 h-10 text-muted-foreground opacity-20" />
+                                )}
+                                {isUploading && (
+                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                        <Loader2 className="w-6 h-6 text-white animate-spin" />
+                                    </div>
+                                )}
+                            </div>
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                className="absolute -bottom-1 -right-1 bg-primary text-white p-1.5 rounded-full shadow-lg hover:scale-110 transition-transform"
+                                title="Change photo"
+                            >
+                                <Upload className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
+                        <div className="space-y-1 text-center md:text-left">
+                            <p className="font-bold text-sm">Profile Picture</p>
+                            <p className="text-xs text-muted-foreground">Upload a new photo. Recommended size 400x400px.</p>
+                            <div className="flex gap-2 mt-2">
+                                <Button size="sm" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="text-[10px] h-7 px-3 rounded-lg">
+                                    Change Photo
+                                </Button>
+                                {formData.image && (
+                                    <Button size="sm" variant="ghost" onClick={() => setFormData({ ...formData, image: '' })} className="text-[10px] h-7 px-3 rounded-lg text-red-500 hover:text-red-600 hover:bg-red-50">
+                                        Remove
+                                    </Button>
+                                )}
+                            </div>
+                            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
+                        </div>
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                             <Label className="text-foreground">Full Name</Label>

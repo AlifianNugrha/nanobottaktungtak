@@ -1,8 +1,5 @@
 import prisma from './prisma';
-import * as Baileys from '@whiskeysockets/baileys';
-
-// Robust way to get BufferJSON regardless of environment (Local vs Railway)
-const BufferJSON = (Baileys as any).BufferJSON || (Baileys as any).default?.BufferJSON;
+import { BufferJSON } from '@whiskeysockets/baileys';
 
 /**
  * Database-based session store for Baileys

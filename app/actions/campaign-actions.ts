@@ -104,6 +104,84 @@ export async function addRecipientsFromCustomers(campaignId: string, userId: str
 }
 
 /**
+ * Add manual recipients to campaign
+ */
+export async function addManualRecipients(campaignId: string, phoneNumbersString: string) {
+    try {
+        // Split by comma or newline and clean up
+        const lines = phoneNumbersString.split(/[\n,]+/).map(line => line.trim()).filter(line => line.length > 0);
+
+        if (lines.length === 0) return { success: false, error: 'No phone numbers provided' };
+
+        const recipientData = lines.map(line => {
+            // Support "Name:Phone" or just "Phone"
+            let name = null;
+            let phone = line;
+
+            if (line.includes(':')) {
+                const parts = line.split(':');
+                name = parts[0].trim();
+                phone = parts[1].trim();
+            }
+
+            // Basic phone cleaning (remove non-digits, simplify for WA)
+            phone = phone.replace(/\D/g, '');
+            if (!phone.startsWith('62') && phone.startsWith('0')) {
+                phone = '62' + phone.substring(1);
+            }
+
+            return {
+                campaignId,
+                customerName: name,
+                customerPhone: phone,
+                status: 'pending'
+            };
+        }).filter(r => r.customerPhone.length > 5); // Filter out obviously invalid numbers
+
+        // Batch insert recipients
+        await (prisma as any).campaignRecipient.createMany({
+            data: recipientData,
+            skipDuplicates: true
+        });
+
+        revalidatePath(`/admin/campaign/${campaignId}`);
+        return { success: true, count: recipientData.length };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Remove a single recipient
+ */
+export async function removeRecipient(recipientId: string, campaignId: string) {
+    try {
+        await (prisma as any).campaignRecipient.delete({
+            where: { id: recipientId }
+        });
+        revalidatePath(`/admin/campaign/${campaignId}`);
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Clear all recipients from a campaign
+ */
+export async function clearRecipients(campaignId: string) {
+    try {
+        await (prisma as any).campaignRecipient.deleteMany({
+            where: { campaignId }
+        });
+        revalidatePath(`/admin/campaign/${campaignId}`);
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+/**
  * START CAMPAIGN (This is tricky in Server Actions due to timeout)
  * For MVP, we will trigger it, but backend processing should ideally be a background job
  * Here we will just set status to 'sending' and the client will call a process API
@@ -119,6 +197,22 @@ export async function launchCampaign(campaignId: string) {
         return { success: true };
     } catch (error) {
         return { success: false };
+    }
+}
+
+/**
+ * Update campaign settings (like delays)
+ */
+export async function updateCampaignSettings(campaignId: string, data: { minDelay?: number, maxDelay?: number }) {
+    try {
+        await (prisma as any).campaign.update({
+            where: { id: campaignId },
+            data
+        });
+        revalidatePath(`/admin/campaign/${campaignId}`);
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
     }
 }
 

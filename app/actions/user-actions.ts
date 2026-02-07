@@ -5,7 +5,7 @@ import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { createNotification } from "./notification-actions";
 
-export async function updateProfile(formData: { name: string; companyName: string }) {
+export async function updateProfile(formData: { name: string; companyName: string; image?: string }) {
     try {
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();
@@ -20,12 +20,14 @@ export async function updateProfile(formData: { name: string; companyName: strin
             update: {
                 name: formData.name,
                 companyName: formData.companyName,
+                image: formData.image,
             },
             create: {
                 id: user.id,
                 email: user.email,
                 name: formData.name,
                 companyName: formData.companyName,
+                image: formData.image,
                 role: 'USER', // Default role
             }
         });

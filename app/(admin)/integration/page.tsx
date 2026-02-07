@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from "@/lib/utils";
@@ -58,6 +59,7 @@ export default function IntegrationPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [qrPolling, setQrPolling] = useState<NodeJS.Timeout | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+  const [allBots, setAllBots] = useState<any[]>([]);
 
   // Widget Config State
   const [widgetConfig, setWidgetConfig] = useState({
@@ -80,18 +82,14 @@ export default function IntegrationPage() {
     };
   }, []);
 
-  /* FILTER BOT LIST TO ONLY SHOW INTEGRATED BOTS IN MAIN LIST */
+  /* LOAD ALL BOTS - SIMPLE VERSION */
   const fetchIntegrations = useCallback(async () => {
     setIsLoading(true);
     try {
       const res = await getBots();
       if (res.success) {
-        // Filter: Only show bots that have an integrationId OR are platform-specific (created via integration page)
-        const integratedBots = (res.data || []).filter((b: any) => b.integrationId || b.config?.platform === 'WhatsApp' || b.config?.platform === 'Website');
-        setIntegrations(integratedBots);
-
-        // Store ALL bots separately for the dropdown selection
-        (window as any).allBots = res.data || [];
+        setIntegrations(res.data || []);
+        setAllBots(res.data || []);
       }
     } catch (error) {
       console.error('[Integration] Error fetching bots:', error);
@@ -358,8 +356,23 @@ export default function IntegrationPage() {
                           <ExternalLink className="w-4 h-4" />
                         </Button>
                       )}
+                      {platform === 'WhatsApp' && (bot.config as any)?.status !== 'Connected' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedPlatform('WhatsApp');
+                            handleConnectWhatsApp(bot.id);
+                            setIsModalOpen(true);
+                          }}
+                          className="h-8 px-3 text-[10px] font-bold gap-2 border-green-200 text-green-600 hover:bg-green-50 rounded-lg"
+                        >
+                          <QrCode className="w-3 h-3" />
+                          Connect
+                        </Button>
+                      )}
 
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(bot.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(bot.id)} className="text-muted-foreground hover:text-destructive h-8 w-8"><Trash2 className="w-4 h-4" /></Button>
                     </div>
                   </div>
                 </Card>
@@ -369,8 +382,10 @@ export default function IntegrationPage() {
         ) : (
           <Card className="p-20 border-dashed border-2 text-center bg-gray-50/30 rounded-[2.5rem]">
             <Plug className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-            <p className="text-muted-foreground font-medium italic text-sm">No active integrations found.</p>
-            <Button variant="link" onClick={() => setIsModalOpen(true)} className="text-primary font-bold mt-2">Connect your first bot</Button>
+            <p className="text-muted-foreground font-medium italic text-sm">Belum ada bot yang dibuat Bang.</p>
+            <Link href="/bot-builder">
+              <Button variant="link" className="text-primary font-bold mt-2 text-base">Pergi ke Bot Builder dulu yuk 🚀</Button>
+            </Link>
           </Card>
         )}
       </div>
@@ -480,18 +495,29 @@ export default function IntegrationPage() {
                   selectedPlatform === 'WhatsApp' ? (
                     <div className="space-y-4">
                       <Label className="text-xs font-bold uppercase">Select Bot to Connect</Label>
-                      <Select onValueChange={(value) => (window as any).selectedBotIdForConnection = value}>
+                      <Select onValueChange={(value) => {
+                        console.log('[Select] Bot selected:', value);
+                        (window as any).selectedBotIdForConnection = value;
+                      }}>
                         <SelectTrigger className="h-12 rounded-xl bg-gray-50">
                           <SelectValue placeholder="Choose a bot from Builder" />
                         </SelectTrigger>
-                        <SelectContent>
-                          {((window as any).allBots || []).filter((b: any) => !b.integrationId).map((bot: any) => (
-                            <SelectItem key={bot.id} value={bot.id}>
-                              {bot.name} ({bot.agent?.name || 'No Agent'})
-                            </SelectItem>
-                          ))}
-                          {((window as any).allBots || []).filter((b: any) => !b.integrationId).length === 0 && (
-                            <div className="p-3 text-xs text-center text-muted-foreground">No unlinked bots available. Create one in Bot Builder first.</div>
+                        <SelectContent className="rounded-xl border-none shadow-xl">
+                          <SelectItem value="none" className="rounded-lg py-2.5 font-bold text-blue-600 italic">
+                            Skip (Broadcast Only / Manual Chat)
+                          </SelectItem>
+                          {allBots.filter((b: any) => !b.integrationId).length > 0 ? (
+                            allBots.filter((b: any) => !b.integrationId).map((bot: any) => (
+                              <SelectItem key={bot.id} value={bot.id} className="rounded-lg py-2.5">
+                                {bot.name} ({bot.agent?.name || 'No Agent'})
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <div className="p-4 text-xs text-center text-muted-foreground italic">
+                              Semua bot kamu sudah terhubung atau belum ada bot.
+                              <br />
+                              Buat bot baru di Bot Builder dulu ya Bang.
+                            </div>
                           )}
                         </SelectContent>
                       </Select>
@@ -506,17 +532,18 @@ export default function IntegrationPage() {
                       <Button
                         onClick={async () => {
                           const botId = (window as any).selectedBotIdForConnection;
-                          if (!botId) {
-                            alert("Please select a bot first!");
-                            return;
-                          }
-                          handleConnectWhatsApp(botId);
+                          const finalBotId = botId === 'none' ? undefined : botId;
+                          handleConnectWhatsApp(finalBotId);
                         }}
                         disabled={isSaving}
                         className="w-full h-12 bg-green-600 hover:bg-green-700 font-bold text-white rounded-xl shadow-lg"
                       >
                         {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Start Connection & Get QR'}
                       </Button>
+
+                      <p className="text-[10px] text-center text-muted-foreground">
+                        *Memilih bot opsional. Jika dilewati (Skip), kamu tetap bisa Broadcast & Chat manual.
+                      </p>
                     </div>
                   ) : (
                     // Logic for Website (existing)
@@ -560,7 +587,7 @@ export default function IntegrationPage() {
                   <div className="w-full mt-4 space-y-4">
                     <p className="text-sm text-muted-foreground px-4">Copy this code to your website's <code>&lt;body&gt;</code> tag. Status will turn <b>Active</b> once installed.</p>
                     <div className="bg-gray-900 text-gray-300 p-4 rounded-xl text-xs font-mono text-left break-all relative group">
-                      {`<script src="https://cd.nanoartif.com/widget.js?id=wdg_${Math.random().toString(36).substr(2, 9)}" defer></script>`}
+                      {`<script src="https://cd.nanoartif.com/widget.js?id=wdg_sample_id" defer></script>`}
                       <Button size="sm" variant="secondary" className="absolute top-2 right-2 h-6 text-[10px]" onClick={() => {
                         alert('Copied! Status updated to Active.');
                         // Logic to update bot status to 'Active' would go here

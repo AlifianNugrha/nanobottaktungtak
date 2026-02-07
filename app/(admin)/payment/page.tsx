@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -45,7 +45,7 @@ export default function PaymentPage() {
   const router = useRouter();
 
   // Check plan status
-  useState(() => {
+  useEffect(() => {
     const checkPlan = async () => {
       const res = await getPlanStatus();
       if (res.success && !res.isPro) {
@@ -53,7 +53,7 @@ export default function PaymentPage() {
       }
     };
     checkPlan();
-  });
+  }, [router]);
 
   // --- STATES (SEMUA DATA TETAP TERJAGA) ---
   const [view, setView] = useState<'main' | 'logic'>('main');

@@ -49,6 +49,7 @@ export default function SalesMonitoringPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   // Form State
   const [newSale, setNewSale] = useState({
@@ -59,6 +60,7 @@ export default function SalesMonitoringPage() {
   });
 
   useEffect(() => {
+    setMounted(true);
     fetchData();
   }, []);
 
@@ -124,6 +126,8 @@ export default function SalesMonitoringPage() {
     }).format(value);
   };
 
+  if (!mounted) return <div className="p-8 text-center text-slate-500">Loading dash...</div>;
+
   return (
     <div className="max-w-6xl mx-auto w-full space-y-8 px-4 pb-20 animate-in fade-in duration-500 font-jakarta">
 
@@ -136,7 +140,10 @@ export default function SalesMonitoringPage() {
         <div className="flex gap-3">
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-[#1E90FF] text-white rounded-xl gap-2 font-bold h-11 px-6 shadow-lg shadow-[#1E90FF]/20 hover:bg-[#187bcd]">
+              <Button
+                className="bg-[#1E90FF] text-white rounded-xl gap-2 font-bold h-11 px-6 shadow-lg shadow-[#1E90FF]/20 hover:bg-[#187bcd]"
+                suppressHydrationWarning
+              >
                 <Plus className="w-4 h-4" /> Add Transaction
               </Button>
             </DialogTrigger>

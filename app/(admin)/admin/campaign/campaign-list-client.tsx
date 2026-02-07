@@ -120,43 +120,46 @@ export function CampaignListClient({ campaigns, userId }: { campaigns: any[], us
             {/* List */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {campaigns.map((camp) => (
-                    <Link key={camp.id} href={`/admin/campaign/${camp.id}`} className="block group">
-                        <Card className="h-full hover:border-[#1E90FF]/50 hover:shadow-md transition-all">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">
-                                    {camp.name}
-                                </CardTitle>
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={(e) => handleDelete(camp.id, camp.name, e)}
-                                        className="p-1.5 rounded-lg hover:bg-red-50 text-muted-foreground hover:text-red-600 transition-colors"
-                                        title="Delete campaign"
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </button>
-                                    <Megaphone className="h-4 w-4 text-muted-foreground group-hover:text-[#1E90FF]" />
+                    <Card key={camp.id} className="h-full hover:border-[#1E90FF]/50 hover:shadow-md transition-all relative group">
+                        <Link href={`/admin/campaign/${camp.id}`} className="absolute inset-0 z-0">
+                            <span className="sr-only">View Campaign {camp.name}</span>
+                        </Link>
+
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10 pointer-events-none">
+                            <CardTitle className="text-sm font-medium">
+                                {camp.name}
+                            </CardTitle>
+                            <div className="flex items-center gap-2 pointer-events-auto">
+                                <button
+                                    onClick={(e) => handleDelete(camp.id, camp.name, e)}
+                                    className="p-1.5 rounded-lg hover:bg-red-50 text-muted-foreground hover:text-red-600 transition-colors"
+                                    title="Delete campaign"
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </button>
+                                <Megaphone className="h-4 w-4 text-muted-foreground group-hover:text-[#1E90FF]" />
+                            </div>
+                        </CardHeader>
+
+                        <CardContent className="relative z-10 pointer-events-none">
+                            <div className="text-xs text-muted-foreground mt-2 line-clamp-2 italic bg-slate-50 p-2 rounded border border-slate-100 mb-4">
+                                "{camp.messageTemplate}"
+                            </div>
+                            <div className="flex items-center justify-between text-xs pointer-events-auto">
+                                <div className="flex items-center gap-1 text-slate-500">
+                                    <Users className="w-3 h-3" />
+                                    <span>{(camp as any)._count?.recipients || 0} {t('Recipients')}</span>
                                 </div>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-xs text-muted-foreground mt-2 line-clamp-2 italic bg-slate-50 p-2 rounded border border-slate-100 mb-4">
-                                    "{camp.messageTemplate}"
-                                </div>
-                                <div className="flex items-center justify-between text-xs">
-                                    <div className="flex items-center gap-1 text-slate-500">
-                                        <Users className="w-3 h-3" />
-                                        <span>{(camp as any)._count?.recipients || 0} {t('Recipients')}</span>
-                                    </div>
-                                    <Badge variant="outline" className={
-                                        camp.status === 'completed' ? 'bg-green-50 text-green-700 border-green-200' :
-                                            camp.status === 'sending' ? 'bg-blue-50 text-blue-700 border-blue-200 animate-pulse' :
-                                                'bg-slate-100 text-slate-700'
-                                    }>
-                                        {camp.status.toUpperCase()}
-                                    </Badge>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </Link>
+                                <Badge variant="outline" className={
+                                    camp.status === 'completed' ? 'bg-green-50 text-green-700 border-green-200' :
+                                        camp.status === 'sending' ? 'bg-blue-50 text-blue-700 border-blue-200 animate-pulse' :
+                                            'bg-slate-100 text-slate-700'
+                                }>
+                                    {camp.status.toUpperCase()}
+                                </Badge>
+                            </div>
+                        </CardContent>
+                    </Card>
                 ))}
             </div>
         </div>

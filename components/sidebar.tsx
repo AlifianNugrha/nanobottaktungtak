@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { logout } from '@/app/actions/auth-actions';
 import { useLanguage } from './language-provider';
 
-export function Sidebar({ isPro, userName, role, userEmail }: { isPro: boolean; userName: string; role?: string; userEmail?: string }) {
+export function Sidebar({ isPro, userName, role, userEmail, userImage }: { isPro: boolean; userName: string; role?: string; userEmail?: string; userImage?: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
   const { t } = useLanguage();
@@ -43,11 +43,11 @@ export function Sidebar({ isPro, userName, role, userEmail }: { isPro: boolean; 
     {
       category: t('Core'),
       items: [
-        { href: '/admin/inbox', label: t('Live Chat / Inbox'), icon: MessageSquare, isLocked: !isPro },
         { href: '/agent', label: t('Agent'), icon: Zap },
-        { href: '/admin/knowledge', label: t('Knowledge Base'), icon: BookOpen },
-        { href: '/bot-builder', label: t('Bot Builder'), icon: Bot },
         { href: '/integration', label: t('Integration'), icon: Plug },
+        { href: '/bot-builder', label: t('Bot Builder'), icon: Bot },
+        { href: '/admin/knowledge', label: t('Knowledge Base'), icon: BookOpen },
+        { href: '/admin/inbox', label: t('Live Chat / Inbox'), icon: MessageSquare, isLocked: !isPro },
       ],
     },
     {
@@ -182,8 +182,12 @@ export function Sidebar({ isPro, userName, role, userEmail }: { isPro: boolean; 
           </div>
 
           <div className="flex items-center gap-4 px-2">
-            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white text-xs font-black uppercase">
-              {userName.substring(0, 2)}
+            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white text-xs font-black uppercase overflow-hidden">
+              {userImage ? (
+                <img src={userImage} alt={userName} className="w-full h-full object-cover" />
+              ) : (
+                userName.substring(0, 2)
+              )}
             </div>
             <div className="flex-1 overflow-hidden text-left">
               <p className="text-[14px] font-bold truncate leading-none mb-1 text-foreground">{userName}</p>
@@ -195,6 +199,7 @@ export function Sidebar({ isPro, userName, role, userEmail }: { isPro: boolean; 
               onClick={() => logout()}
               className="p-2 text-muted-foreground hover:text-red-500 transition-colors"
               title="Logout"
+              suppressHydrationWarning
             >
               <LogOut className="w-5 h-5" />
             </button>

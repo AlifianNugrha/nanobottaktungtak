@@ -11,6 +11,7 @@ export default async function SettingsPage() {
   let userEmail = user?.email || '';
   let companyName = 'Acme Corporation';
   let role = 'USER';
+  let userImage = '';
 
   if (user) {
     const dbUser = await prisma.user.findUnique({
@@ -21,10 +22,11 @@ export default async function SettingsPage() {
       role = dbUser.role;
       userName = dbUser.name || user.email?.split('@')[0] || 'User NanoArtif';
       companyName = dbUser.companyName || '';
+      userImage = dbUser.image || '';
     }
   }
 
   const isPro = role === 'PRO_USER' || role === 'ADMIN';
 
-  return <SettingsClient userName={userName} userEmail={userEmail} companyName={companyName} isPro={isPro} />;
+  return <SettingsClient userName={userName} userEmail={userEmail} companyName={companyName} isPro={isPro} userImage={userImage} />;
 }
