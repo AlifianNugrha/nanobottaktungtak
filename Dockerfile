@@ -1,8 +1,8 @@
 FROM node:20-alpine AS base
+RUN apk add --no-cache libc6-compat openssl
 
 # Install dependencies only when needed
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Install dependencies based on the preferred package manager
@@ -27,9 +27,6 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3000
-
-# Install prisma for runtime and basic deps
-RUN apk add --no-cache openssl
 
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next ./.next
