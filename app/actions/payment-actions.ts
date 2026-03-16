@@ -39,7 +39,8 @@ export async function createPaymentToken(plan: 'pro_monthly' | 'pro_yearly') {
         // Create transaction parameter
         const parameter = {
             transaction_details: {
-                order_id: `PRO-${user.id}-${Date.now()}`,
+                // Midtrans max order_id length is 50. ID format: PR-{shortUser}-{timestamp}
+                order_id: `PR-${user.id.substring(0, 8)}-${Date.now()}`,
                 gross_amount: selectedPlan.price
             },
             item_details: [{

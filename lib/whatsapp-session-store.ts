@@ -17,7 +17,7 @@ export class DatabaseSessionStore {
      */
     async saveState(state: any) {
         try {
-            const serialized = BufferJSON.stringify(state);
+            const serialized = JSON.stringify(state, BufferJSON.replacer);
 
             await prisma.whatsAppSession.upsert({
                 where: { sessionId: this.sessionId },
@@ -52,7 +52,7 @@ export class DatabaseSessionStore {
                 return null;
             }
 
-            const state = BufferJSON.parse(session.sessionData);
+            const state = JSON.parse(session.sessionData, BufferJSON.reviver);
             console.log(`[Session] Loaded and parsed for ${this.sessionId}`);
             return state;
         } catch (error) {
