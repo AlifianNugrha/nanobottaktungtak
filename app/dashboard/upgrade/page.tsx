@@ -25,8 +25,11 @@ export default function UpgradePage() {
 
     // Load Midtrans Snap.js
     useEffect(() => {
+        const isProduction = process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === 'true';
         const script = document.createElement('script');
-        script.src = `https://app.sandbox.midtrans.com/snap/snap.js`;
+        script.src = isProduction 
+            ? 'https://app.midtrans.com/snap/snap.js' 
+            : 'https://app.sandbox.midtrans.com/snap/snap.js';
         script.setAttribute('data-client-key', process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || '');
         document.body.appendChild(script);
 
