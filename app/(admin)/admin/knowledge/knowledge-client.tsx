@@ -200,7 +200,7 @@ export function KnowledgeClient({ initialDocs, agents, userId }: { initialDocs: 
                         </CardContent>
                         <CardFooter className="pt-2 border-t border-slate-100 flex justify-between items-center text-xs text-slate-400">
                             <span>{new Date(doc.createdAt).toLocaleDateString()}</span>
-                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                                 <Button
                                     variant="ghost"
                                     size="icon"

@@ -84,21 +84,21 @@ export default function NotificationPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 py-4">
+    <div className="max-w-5xl mx-auto space-y-8 py-4 px-4 sm:px-0">
 
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-foreground">Notifications</h1>
           <p className="text-muted-foreground text-xs mt-1">Pusat aktivitas real-time sistem Anda.</p>
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="flex flex-col w-full sm:flex-row sm:w-auto gap-2 sm:items-center">
           {selectedIds.length > 0 && (
             <Button
               variant="destructive"
               onClick={handleDeleteSelected}
               disabled={isDeleting}
-              className="h-10 rounded-xl px-5 text-xs font-bold shadow-lg"
+              className="w-full sm:w-auto h-10 rounded-xl px-5 text-xs font-bold shadow-lg"
             >
               {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : <Trash2 className="w-3.5 h-3.5 mr-2" />}
               Delete ({selectedIds.length})
@@ -107,7 +107,7 @@ export default function NotificationPage() {
           <Button
             onClick={handleMarkAllRead}
             disabled={isLoading || notifications.filter(n => !n.isRead).length === 0}
-            className="h-10 rounded-xl px-5 text-xs font-bold bg-[#1E90FF] text-white shadow-lg shadow-[#1E90FF]/20 disabled:opacity-50"
+            className="w-full sm:w-auto h-10 rounded-xl px-5 text-xs font-bold bg-[#1E90FF] text-white shadow-lg shadow-[#1E90FF]/20 disabled:opacity-50"
           >
             <CheckCheck className="w-3.5 h-3.5 mr-2" /> Mark All Read
           </Button>
@@ -116,7 +116,7 @@ export default function NotificationPage() {
 
       {/* TABS & TOOLS */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div className="flex items-center gap-2 p-1.5 bg-gray-100/80 w-fit rounded-2xl border border-gray-200/50 backdrop-blur-sm">
+        <div className="flex items-center gap-2 p-1.5 bg-gray-100/80 w-full md:w-fit rounded-2xl border border-gray-200/50 backdrop-blur-sm overflow-x-auto scrollbar-hide">
           {['All', 'Unread', 'Sales', 'System', 'AI Bot'].map((tab) => (
             <button
               key={tab}
@@ -170,17 +170,17 @@ export default function NotificationPage() {
                 className={`flex-1 p-0 overflow-hidden border-none shadow-sm transition-all hover:translate-x-1 cursor-pointer ${selectedIds.includes(n.id) ? 'ring-2 ring-[#1E90FF] ring-offset-2' : ''} ${!n.isRead ? 'bg-white' : 'bg-gray-50/40 opacity-80'
                   }`}
               >
-                <div className="flex items-stretch min-h-[85px]">
+                <div className="flex items-stretch min-h-[60px] sm:min-h-[85px]">
                   <div className={`w-1 ${n.isRead ? 'bg-gray-200' :
                     n.type === 'Sales' ? 'bg-green-500' : 'bg-[#1E90FF]'
                     }`} />
 
-                  <div className="flex-1 p-5 flex items-center gap-5">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${!n.isRead ? 'bg-gray-50' : 'bg-transparent'
+                  <div className="flex-1 p-3 sm:p-5 flex items-center gap-3 sm:gap-5">
+                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 ${!n.isRead ? 'bg-gray-50' : 'bg-transparent'
                       }`}>
-                      {n.type === 'Sales' ? <CircleDollarSign className="w-5 h-5 text-green-600" /> :
-                        n.type === 'System' ? <Info className="w-5 h-5 text-blue-600" /> :
-                          <Zap className="w-5 h-5 text-[#1E90FF]" />}
+                      {n.type === 'Sales' ? <CircleDollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" /> :
+                        n.type === 'System' ? <Info className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" /> :
+                          <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-[#1E90FF]" />}
                     </div>
 
                     <div className="flex-1 min-w-0">

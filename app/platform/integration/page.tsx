@@ -170,7 +170,7 @@ export default function IntegrationPage() {
     <div className="max-w-5xl mx-auto w-full space-y-8 px-4 sm:px-6 lg:px-8">
 
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-border pb-6">
         <div className="space-y-1">
           <h1 className="text-3xl font-bold text-foreground tracking-tight">Integrations</h1>
           <p className="text-muted-foreground text-sm">Manage your chatbot connections.</p>
@@ -178,7 +178,7 @@ export default function IntegrationPage() {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button className="bg-primary hover:bg-primary/90 text-white gap-2 shadow-lg shadow-primary/20 h-11 px-6 font-bold">
+            <Button className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white gap-2 shadow-lg shadow-primary/20 h-11 px-6 font-bold rounded-xl">
               <Plus className="w-4 h-4" />
               Add New
               <ChevronDown className="w-4 h-4 opacity-50" />
@@ -219,33 +219,33 @@ export default function IntegrationPage() {
             if (platform === 'Website') { Icon = Globe; color = 'text-primary'; }
 
             return (
-              <Card key={bot.id} className="p-4 hover:shadow-md transition-all border-border group bg-white">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className={cn("p-3 rounded-2xl bg-gray-50 group-hover:bg-primary/5 transition-colors", color)}>
+              <Card key={bot.id} className="p-4 hover:shadow-md transition-all border-border group bg-white rounded-2xl">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4 w-full min-w-0">
+                    <div className={cn("p-3 rounded-2xl bg-gray-50 group-hover:bg-primary/5 transition-colors shrink-0", color)}>
                       <Icon className="w-6 h-6" />
                     </div>
-                    <div>
-                      <h4 className="font-bold text-foreground">{bot.name}</h4>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className={`w-2 h-2 rounded-full ${statusColor} ${isConnected ? 'animate-pulse' : ''}`} />
-                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-bold text-foreground truncate w-full">{bot.name}</h4>
+                      <div className="flex items-center gap-2 mt-0.5 flex-nowrap w-full min-w-0">
+                        <span className={`w-2 h-2 rounded-full shrink-0 ${statusColor} ${isConnected ? 'animate-pulse' : ''}`} />
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter truncate block flex-1 min-w-0">
                           {platform || 'API'} • {statusText}
                         </span>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto justify-end mt-3 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-0 border-border/50">
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="text-muted-foreground hover:text-primary"
+                      className="w-full sm:w-auto text-muted-foreground hover:text-primary"
                       onClick={() => handleOpenSettings(bot)}
                     >
                       <Settings2 className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary"><ExternalLink className="w-4 h-4" /></Button>
-                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
+                    <Button variant="ghost" size="icon" className="w-full sm:w-auto text-muted-foreground hover:text-primary"><ExternalLink className="w-4 h-4" /></Button>
+                    <Button variant="ghost" size="icon" className="w-full sm:w-8 text-muted-foreground hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
                   </div>
                 </div>
               </Card>

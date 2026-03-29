@@ -20,7 +20,9 @@ export interface WhatsAppSession {
     status: 'connecting' | 'connected' | 'disconnected';
 }
 
-const activeSessions = new Map<string, WhatsAppSession>();
+const globalForWhatsApp = global as unknown as { activeSessions: Map<string, WhatsAppSession> };
+const activeSessions = globalForWhatsApp.activeSessions || new Map<string, WhatsAppSession>();
+if (process.env.NODE_ENV !== 'production') globalForWhatsApp.activeSessions = activeSessions;
 
 /**
  * Reverted to simple file-based auth for local stability
@@ -214,7 +216,7 @@ export async function createWhatsAppSession(sessionId: string) {
 
             if (bot && bot.agent) {
                 // Save/Ensure Customer Exists
-                const contactName = msg.pushName || from.replace('@s.whatsapp.net', '');
+                const contactName = msg.pushName || from.split('@')[0];
                 await ensureCustomerExists(bot.userId, from, contactName);
 
                 // CHECK USAGE LIMIT
@@ -222,6 +224,23 @@ export async function createWhatsAppSession(sessionId: string) {
                 if (!usageCheck.allowed) {
                     console.log(`Usage limit reached for user ${bot.userId}`);
                     await sock.sendMessage(from, { text: usageCheck.message || 'Limit reached.' });
+                    return;
+                }
+
+                // CHECK IF CONVERSATION IS PAUSED
+                const conversationStatus = await prisma.conversation.findUnique({
+                    where: {
+                        integrationId_contactNumber: {
+                            integrationId: sessionId,
+                            contactNumber: from
+                        }
+                    },
+                    select: { isBotPaused: true }
+                });
+
+                if (conversationStatus?.isBotPaused) {
+                    console.log(`[Session ${sessionId}] Bot is paused for ${from}. Logging message without replying.`);
+                    await saveMessageToHistory(sessionId, from, messageText, null, contactName);
                     return;
                 }
 
@@ -248,7 +267,7 @@ export async function createWhatsAppSession(sessionId: string) {
                 await sock.sendPresenceUpdate('paused', from);
 
                 // Save conversation
-                await saveMessageToHistory(sessionId, from, messageText, response);
+                await saveMessageToHistory(sessionId, from, messageText, response, contactName);
 
                 // Check for image tag in response
                 const imageMatch = response.match(/\[IMAGE:\s*(.*?)\]/i);
@@ -343,7 +362,13 @@ export async function restoreExistingSessions() {
 export async function sendMessage(sessionId: string, to: string, message: string) {
     const session = activeSessions.get(sessionId);
     if (!session || session.status !== 'connected') {
-        throw new Error('Session not connected');
+        // Coba auto-reconnect jika di database statusnya connected
+        const integration = await prisma.integration.findUnique({ where: { id: sessionId } });
+        if (integration?.status === 'connected') {
+            createWhatsAppSession(sessionId).catch(console.error);
+            throw new Error('Sistem sedang menghubungkan ulang bot ke WhatsApp secara otomatis. Mohon tunggu 5 detik dan coba kirim ulang.');
+        }
+        throw new Error('Bot WhatsApp belum terkoneksi / terputus.');
     }
 
     const jid = to.includes('@') ? to : `${to}@s.whatsapp.net`;

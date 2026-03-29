@@ -65,7 +65,7 @@ export function CampaignListClient({ campaigns, userId }: { campaigns: any[], us
     return (
         <div className="space-y-6">
             {/* Toolbar */}
-            <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
                 <div>
                     <p className="text-sm text-slate-500">{t('Total Campaign')}</p>
                     <p className="text-2xl font-bold">{campaigns.length}</p>
@@ -73,7 +73,7 @@ export function CampaignListClient({ campaigns, userId }: { campaigns: any[], us
 
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button className="bg-[#1E90FF] hover:bg-[#187bcd] text-white gap-2 shadow-lg shadow-blue-500/20">
+                        <Button className="w-full sm:w-auto bg-[#1E90FF] hover:bg-[#187bcd] text-white gap-2 shadow-lg shadow-blue-500/20">
                             <Plus className="h-4 w-4" />
                             {t('Create New Campaign')}
                         </Button>

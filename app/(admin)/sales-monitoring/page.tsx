@@ -132,16 +132,16 @@ export default function SalesMonitoringPage() {
     <div className="max-w-6xl mx-auto w-full space-y-8 px-4 pb-20 animate-in fade-in duration-500 font-jakarta">
 
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-6">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-border pb-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Sales Monitoring</h1>
           <p className="text-muted-foreground text-sm mt-1">Real-time transaction data from database.</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
             <DialogTrigger asChild>
               <Button
-                className="bg-[#1E90FF] text-white rounded-xl gap-2 font-bold h-11 px-6 shadow-lg shadow-[#1E90FF]/20 hover:bg-[#187bcd]"
+                className="w-full sm:w-auto bg-[#1E90FF] text-white rounded-xl gap-2 font-bold h-11 px-6 shadow-lg shadow-[#1E90FF]/20 hover:bg-[#187bcd]"
                 suppressHydrationWarning
               >
                 <Plus className="w-4 h-4" /> Add Transaction
@@ -204,8 +204,8 @@ export default function SalesMonitoringPage() {
               </div>
             </DialogContent>
           </Dialog>
-          <Button variant="outline" size="icon" onClick={fetchData} className="rounded-xl h-11 w-11" title="Refresh Data">
-            <RefreshCcw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+          <Button variant="outline" size="icon" onClick={fetchData} className="rounded-xl h-11 w-full sm:w-11" title="Refresh Data">
+            <RefreshCcw className={`w-4 h-4 mr-2 sm:mr-0 ${isLoading ? 'animate-spin' : ''}`} /> <span className="sm:hidden">Refresh Data</span>
           </Button>
         </div>
       </div>
@@ -260,9 +260,9 @@ export default function SalesMonitoringPage() {
 
       {/* RECENT TRANSACTIONS TABLE */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h3 className="font-bold text-lg">Recent Transactions</h3>
-          <div className="relative w-64">
+          <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Search orders..."

@@ -228,7 +228,7 @@ export default function AgentPage() {
 
   return (
     <div className="max-w-6xl mx-auto w-full space-y-8 px-4 pb-20">
-      <div className="flex items-center justify-between gap-4 border-b border-border pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-6">
         <div className="flex items-center gap-4">
           {(view === 'add' || view === 'edit') && (
             <Button variant="outline" size="icon" onClick={() => setView('list')} className="rounded-xl h-10 w-10">
@@ -253,7 +253,7 @@ export default function AgentPage() {
                 </>
               )}
             </div>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-muted-foreground text-sm mt-1 break-words max-w-[280px] sm:max-w-none">
               {view === 'list' ? 'Manage your AI assistants.' : 'Configure identity, knowledge, and products.'}
             </p>
           </div>
@@ -263,7 +263,7 @@ export default function AgentPage() {
           <Button
             onClick={openAddMode}
             disabled={agents.length >= limit}
-            className={`text-white gap-2 h-11 px-6 font-bold shadow-lg rounded-xl transition-all ${agents.length >= limit ? 'bg-gray-300 cursor-not-allowed text-gray-500 shadow-none' : 'bg-[#1E90FF] hover:bg-[#187bcd] shadow-[#1E90FF]/20'}`}
+            className={`w-full sm:w-auto text-white gap-2 h-11 px-6 font-bold shadow-lg rounded-xl transition-all ${agents.length >= limit ? 'bg-gray-300 cursor-not-allowed text-gray-500 shadow-none' : 'bg-[#1E90FF] hover:bg-[#187bcd] shadow-[#1E90FF]/20'}`}
           >
             {agents.length >= limit ? 'Limit Reached' : <><Plus className="w-4 h-4" /> Create Agent</>}
           </Button>
@@ -312,13 +312,6 @@ export default function AgentPage() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in slide-in-from-bottom-4 duration-500">
           <div className="space-y-6">
-            <Card className="p-6 text-center space-y-4">
-              <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest text-center block">Agent Avatar</Label>
-              <div className="relative mx-auto w-32 h-32 border-2 border-dashed border-[#1E90FF]/20 rounded-[2.5rem] flex flex-col items-center justify-center bg-gray-50 hover:bg-[#1E90FF]/5 transition-colors cursor-pointer group">
-                <Upload className="w-6 h-6 text-muted-foreground group-hover:text-[#1E90FF]" />
-                <span className="text-[9px] font-bold mt-1 text-muted-foreground group-hover:text-[#1E90FF] uppercase">Upload</span>
-              </div>
-            </Card>
             <Card className="p-6 space-y-4 border-l-4 border-l-[#1E90FF] shadow-sm">
               <div className="flex items-center justify-between">
                 <Label className="text-[10px] font-bold uppercase text-muted-foreground">Knowledge Base</Label>
@@ -676,7 +669,7 @@ export default function AgentPage() {
         <DialogContent className="sm:max-w-[600px] rounded-[2rem] p-0 overflow-hidden">
           <div className="p-6 border-b border-border bg-gray-50/50">
             <DialogTitle className="text-lg font-bold">Import from Catalog</DialogTitle>
-            <p className="text-xs text-muted-foreground mt-1">Select products to add to your agent's knowledge base.</p>
+            <p className="text-xs text-muted-foreground mt-1 break-words">Select products to add to your agent's knowledge base.</p>
           </div>
           <div className="p-6 max-h-[400px] overflow-y-auto space-y-3">
             {catalogProducts.length > 0 ? catalogProducts.map(product => (

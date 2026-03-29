@@ -246,26 +246,26 @@ export default function IntegrationPage() {
 
   return (
     <div className="max-w-5xl mx-auto w-full space-y-8 px-4 sm:px-6 lg:px-8 pb-20 font-jakarta">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-border pb-6">
         <div className="space-y-1">
           <h1 className="text-3xl font-bold text-foreground tracking-tight">Integrations</h1>
-          <p className="text-muted-foreground text-sm">Manage your chatbot connections and live channels.</p>
+          <p className="text-muted-foreground text-sm break-words max-w-[280px] sm:max-w-none">Manage your chatbot connections and live channels.</p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           {/* Cleanup Button */}
           <Button
             variant="outline"
             onClick={handleCleanup}
-            className="gap-2 h-11 px-4 rounded-xl border-orange-200 text-orange-600 hover:bg-orange-50"
+            className="w-full sm:w-auto gap-2 h-11 px-4 rounded-xl border-orange-200 text-orange-600 hover:bg-orange-50"
           >
-            <RefreshCw className="w-4 h-4" />
-            <span className="hidden sm:inline">Cleanup</span>
+            <RefreshCw className="w-4 h-4 mr-2 sm:mr-0" />
+            <span>Cleanup</span>
           </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button className="bg-primary hover:bg-primary/90 text-white gap-2 shadow-lg shadow-primary/20 h-11 px-6 font-bold rounded-xl">
+              <Button className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white gap-2 shadow-lg shadow-primary/20 h-11 px-6 font-bold rounded-xl">
                 <Plus className="w-4 h-4" />
                 Add Connection
                 <ChevronDown className="w-4 h-4 opacity-50" />
@@ -301,14 +301,14 @@ export default function IntegrationPage() {
               const { icon: Icon, color } = getPlatformIcon(platform);
               return (
                 <Card key={bot.id} className="p-4 hover:shadow-md transition-all border-border group bg-white rounded-2xl">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className={cn("p-3 rounded-2xl bg-gray-50 group-hover:bg-primary/5 transition-colors", color)}>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4 w-full min-w-0">
+                      <div className={cn("p-3 rounded-2xl bg-gray-50 group-hover:bg-primary/5 transition-colors shrink-0", color)}>
                         <Icon className="w-6 h-6" />
                       </div>
-                      <div>
-                        <h4 className="font-bold text-foreground">{bot.name}</h4>
-                        <div className="flex items-center gap-2 mt-0.5">
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-bold text-foreground truncate w-full">{bot.name}</h4>
+                        <div className="flex items-center gap-2 mt-0.5 flex-nowrap w-full min-w-0">
                           {/* STATUS INDICATOR LOGIC */}
                           {(() => {
                             // Determine status color and text
@@ -319,8 +319,8 @@ export default function IntegrationPage() {
 
                             return (
                               <>
-                                <span className={`w-2 h-2 rounded-full ${statusColor} ${isConnected ? 'animate-pulse' : ''}`} />
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">
+                                <span className={`w-2 h-2 rounded-full shrink-0 ${statusColor} ${isConnected ? 'animate-pulse' : ''}`} />
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter truncate block flex-1 min-w-0">
                                   {platform || 'API'} • {statusText} • Agent: {bot.agent?.name || 'Unassigned'}
                                 </span>
                               </>
@@ -329,7 +329,7 @@ export default function IntegrationPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto justify-end mt-3 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-0 border-border/50">
                       {/* Tombol Connect/Scan untuk WhatsApp */}
                       {platform === 'WhatsApp' && (bot.config as any)?.status !== 'Active' && (bot.config as any)?.status !== 'Connected' && (
                         <Button
@@ -339,7 +339,7 @@ export default function IntegrationPage() {
                             handleConnectWhatsApp(bot.id);
                             setIsModalOpen(true);
                           }}
-                          className="h-9 px-4 text-xs font-bold gap-2 border-green-200 text-green-600 hover:bg-green-50 rounded-xl"
+                          className="w-full sm:w-auto h-9 px-4 text-xs font-bold gap-2 border-green-200 text-green-600 hover:bg-green-50 rounded-xl"
                         >
                           <QrCode className="w-3.5 h-3.5" />
                           Connect
@@ -348,7 +348,7 @@ export default function IntegrationPage() {
 
                       {/* Tombol View Code untuk Widget */}
                       {platform === 'Website' && (
-                        <Button variant="ghost" size="icon" className="text-blue-500 hover:text-blue-600 hover:bg-blue-50" onClick={() => {
+                        <Button variant="ghost" size="icon" className="w-full sm:w-auto text-blue-500 hover:text-blue-600 hover:bg-blue-50" onClick={() => {
                           setSelectedPlatform('Website');
                           setConfigStep('success');
                           setIsModalOpen(true);
@@ -356,23 +356,9 @@ export default function IntegrationPage() {
                           <ExternalLink className="w-4 h-4" />
                         </Button>
                       )}
-                      {platform === 'WhatsApp' && (bot.config as any)?.status !== 'Connected' && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedPlatform('WhatsApp');
-                            handleConnectWhatsApp(bot.id);
-                            setIsModalOpen(true);
-                          }}
-                          className="h-8 px-3 text-[10px] font-bold gap-2 border-green-200 text-green-600 hover:bg-green-50 rounded-lg"
-                        >
-                          <QrCode className="w-3 h-3" />
-                          Connect
-                        </Button>
-                      )}
 
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(bot.id)} className="text-muted-foreground hover:text-destructive h-8 w-8"><Trash2 className="w-4 h-4" /></Button>
+
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(bot.id)} className="w-full sm:w-8 text-muted-foreground hover:text-destructive h-8"><Trash2 className="w-4 h-4" /></Button>
                     </div>
                   </div>
                 </Card>
@@ -399,7 +385,7 @@ export default function IntegrationPage() {
               </div>
               <div>
                 <DialogTitle className="text-xl font-bold">{configStep === 'qr' ? 'Scan QR Code' : configStep === 'success' ? 'Completed' : `Connect ${selectedPlatform}`}</DialogTitle>
-                <DialogDescription className="text-primary/10 text-xs font-medium">Link your chatbot in seconds.</DialogDescription>
+                <DialogDescription className="text-primary/70 text-xs font-medium break-words">Link your chatbot in seconds.</DialogDescription>
               </div>
             </div>
           </div>

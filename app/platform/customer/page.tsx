@@ -79,7 +79,7 @@ export default function CustomerPage() {
     <div className="max-w-6xl mx-auto w-full space-y-8 px-4 pb-20">
 
       {/* HEADER */}
-      <div className="flex items-center justify-between border-b border-border pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-6">
         <div className="flex items-center gap-4">
           {view !== 'list' && (
             <Button variant="outline" size="icon" onClick={() => setView('list')} className="rounded-xl">
@@ -97,7 +97,7 @@ export default function CustomerPage() {
         </div>
 
         {view === 'list' && (
-          <Button onClick={() => { setFormData({ id: '', name: '', email: '', phone: '', status: 'Lead' }); setView('add'); }} className="bg-primary hover:bg-primary/90 text-white gap-2 h-11 px-6 font-bold shadow-lg shadow-primary/20 rounded-xl">
+          <Button onClick={() => { setFormData({ id: '', name: '', email: '', phone: '', status: 'Lead' }); setView('add'); }} className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white gap-2 h-11 px-6 font-bold shadow-lg shadow-primary/20 rounded-xl">
             <UserPlus className="w-4 h-4" /> Add Customer
           </Button>
         )}
@@ -129,8 +129,8 @@ export default function CustomerPage() {
           </div>
 
           {/* Search */}
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+          <div className="relative w-full max-w-full sm:max-w-md">
+            <Search className="absolute left-3 top-3.5 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Cari nama atau email..."
               className="pl-10 h-11 rounded-xl bg-white border-border"

@@ -78,25 +78,25 @@ export default function LoginPage() {
     const [state, formAction, isPending] = useActionState(authAction, initialState);
 
     return (
-        <div className="min-h-screen grid lg:grid-cols-2">
+        <div className="min-h-[100dvh] grid lg:grid-cols-2">
 
             {/* LEFT SIDE: FORM */}
-            <div className="flex flex-col justify-center px-8 sm:px-12 lg:px-20 xl:px-32 bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-900 relative animate-in slide-in-from-left-10 duration-700 overflow-hidden">
+            <div className="flex flex-col justify-center px-4 sm:px-12 lg:px-20 xl:px-32 py-10 lg:py-0 bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-900 relative animate-in slide-in-from-left-10 duration-700 overflow-hidden">
 
                 {/* Background Decoration (Blobs) for Glass Effect */}
                 <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-400/30 rounded-full blur-3xl pointer-events-none" />
                 <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-indigo-500/30 rounded-full blur-3xl pointer-events-none" />
 
 
-                <div className="w-full max-w-sm mx-auto space-y-8 mt-10 lg:mt-0 bg-white/10 backdrop-blur-lg border border-white/20 p-8 rounded-3xl shadow-2xl relative z-10 min-h-[500px] flex flex-col justify-center">
+                <div className="w-full max-w-sm mx-auto space-y-6 sm:space-y-8 mt-4 sm:mt-10 lg:mt-0 bg-white/10 backdrop-blur-lg border border-white/20 p-6 sm:p-8 rounded-2xl sm:rounded-3xl shadow-2xl relative z-10 min-h-[400px] sm:min-h-[500px] flex flex-col justify-center">
 
                     {/* Header Text */}
-                    <div className="space-y-4 text-center lg:text-left">
-                        <div className="space-y-2">
-                            <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-white">
+                    <div className="space-y-2 sm:space-y-4 text-center lg:text-left">
+                        <div className="space-y-1 sm:space-y-2">
+                            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter text-white">
                                 {mode === 'verify' ? 'Check Email' : (mode === 'login' ? 'Welcome Back!' : 'Start Building.')}
                             </h1>
-                            <p className="text-blue-100 font-medium">
+                            <p className="text-sm sm:text-base text-blue-100 font-medium">
                                 {mode === 'verify'
                                     ? 'We sent a verification code to your email.'
                                     : (mode === 'login' ? 'Enter your details to access your workspace.' : 'Join NanoArtif and automate your sales.')}
@@ -105,7 +105,7 @@ export default function LoginPage() {
                     </div>
 
                     {/* Form */}
-                    <form action={formAction} className="space-y-6">
+                    <form action={formAction} className="space-y-4 sm:space-y-6">
                         <input type="hidden" name="auth_mode" value={mode} />
 
                         {mode === 'verify' ? (
@@ -140,7 +140,7 @@ export default function LoginPage() {
                                                 name="name"
                                                 type="text"
                                                 required
-                                                className="pl-12 h-12 bg-white border-transparent focus:border-white focus:ring-4 focus:ring-white/20 rounded-xl transition-all text-slate-900 placeholder:text-slate-400"
+                                                className="pl-12 h-11 sm:h-12 bg-white border-transparent focus:border-white focus:ring-4 focus:ring-white/20 rounded-xl transition-all text-slate-900 placeholder:text-slate-400"
                                                 placeholder="nama anda"
                                             />
                                         </div>
@@ -156,7 +156,7 @@ export default function LoginPage() {
                                             type="email"
                                             required
                                             defaultValue={(state as any)?.email || ''} // Preserve email if retrying
-                                            className="pl-12 h-12 bg-white border-transparent focus:border-white focus:ring-4 focus:ring-white/20 rounded-xl transition-all text-slate-900 placeholder:text-slate-400"
+                                            className="pl-12 h-11 sm:h-12 bg-white border-transparent focus:border-white focus:ring-4 focus:ring-white/20 rounded-xl transition-all text-slate-900 placeholder:text-slate-400"
                                             placeholder="name@company.com"
                                         />
                                     </div>
@@ -171,7 +171,7 @@ export default function LoginPage() {
                                             type={showPassword ? 'text' : 'password'}
                                             required
                                             minLength={6}
-                                            className="pl-12 pr-12 h-12 bg-white border-transparent focus:border-white focus:ring-4 focus:ring-white/20 rounded-xl transition-all text-slate-900 placeholder:text-slate-400"
+                                            className="pl-12 pr-12 h-11 sm:h-12 bg-white border-transparent focus:border-white focus:ring-4 focus:ring-white/20 rounded-xl transition-all text-slate-900 placeholder:text-slate-400"
                                             placeholder="••••••••"
                                         />
                                         <button
@@ -197,7 +197,7 @@ export default function LoginPage() {
                             <Button
                                 type="submit"
                                 disabled={isPending}
-                                className="w-full bg-slate-900 hover:bg-slate-800 text-white h-12 rounded-xl font-bold shadow-lg shadow-black/20 transition-all active:scale-[0.98] group border border-slate-800"
+                                className="w-full bg-slate-900 hover:bg-slate-800 text-white h-11 sm:h-12 rounded-xl font-bold shadow-lg shadow-black/20 transition-all active:scale-[0.98] group border border-slate-800"
                             >
                                 {isPending ? (
                                     <span className="flex items-center gap-2">Processing...</span>
@@ -228,7 +228,7 @@ export default function LoginPage() {
                         </div>
                     )}
 
-                    <div className="pt-8 border-t border-white/10 text-center lg:text-left">
+                    <div className="pt-4 sm:pt-8 border-t border-white/10 text-center lg:text-left">
                         <p className="text-[10px] text-blue-200 font-medium uppercase tracking-widest">
                             © 2026 NanoArtif Inc. Secure & Encrypted.
                         </p>

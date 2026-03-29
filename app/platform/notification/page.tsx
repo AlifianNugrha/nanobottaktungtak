@@ -32,7 +32,7 @@ export default function NotificationPage() {
   }, [activeTab, notifications]);
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 py-4">
+    <div className="max-w-5xl mx-auto space-y-8 py-4 px-4 sm:px-0">
 
       {/* HEADER: Judul Halaman */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -50,8 +50,8 @@ export default function NotificationPage() {
         </div>
       </div>
 
-      {/* --- FILTER KATEGORI (DI ATAS / HORIZONTAL) --- */}
-      <div className="flex items-center gap-2 p-1.5 bg-gray-100/80 w-fit rounded-2xl border border-gray-200/50 backdrop-blur-sm">
+      {/* --- FILTER KATEGORI --- */}
+      <div className="flex items-center gap-2 p-1.5 bg-gray-100/80 w-full md:w-fit rounded-2xl border border-gray-200/50 backdrop-blur-sm overflow-x-auto scrollbar-hide">
         {['All', 'Unread', 'Sales', 'System', 'AI Bot'].map((tab) => (
           <button
             key={tab}
@@ -81,19 +81,19 @@ export default function NotificationPage() {
               className={`p-0 overflow-hidden border-none shadow-sm transition-all hover:translate-x-1 cursor-pointer ${n.unread ? 'bg-white' : 'bg-gray-50/40 opacity-80'
                 }`}
             >
-              <div className="flex items-stretch min-h-[85px]">
+              <div className="flex items-stretch min-h-[60px] sm:min-h-[85px]">
                 {/* Status Indicator Bar */}
                 <div className={`w-1 ${!n.unread ? 'bg-gray-200' :
                   n.type === 'Sales' ? 'bg-green-500' : 'bg-primary'
                   }`} />
 
-                <div className="flex-1 p-5 flex items-center gap-5">
+                <div className="flex-1 p-3 sm:p-5 flex items-center gap-3 sm:gap-5">
                   {/* Icon bulat minimalis */}
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${n.unread ? 'bg-gray-50' : 'bg-transparent'
+                  <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 ${n.unread ? 'bg-gray-50' : 'bg-transparent'
                     }`}>
-                    {n.type === 'Sales' ? <CircleDollarSign className="w-5 h-5 text-green-600" /> :
-                      n.type === 'System' ? <Info className="w-5 h-5 text-blue-600" /> :
-                        <Zap className="w-5 h-5 text-orange-600" />}
+                    {n.type === 'Sales' ? <CircleDollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" /> :
+                      n.type === 'System' ? <Info className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" /> :
+                        <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />}
                   </div>
 
                   {/* Teks Konten */}

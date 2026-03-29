@@ -45,22 +45,22 @@ const deviceData = [
 export default function Analytics() {
   return (
     <div className="space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-border pb-6">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Analytics</h1>
           <p className="text-muted-foreground mt-2">
             Detailed insights and performance metrics.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
           <Button
             variant="outline"
-            className="border-border text-foreground hover:bg-secondary gap-2 bg-transparent"
+            className="w-full sm:w-auto border-border text-foreground hover:bg-secondary gap-2 bg-transparent rounded-xl"
           >
             <Filter className="w-4 h-4" />
             Filter
           </Button>
-          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
+          <Button className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground gap-2 rounded-xl">
             <Download className="w-4 h-4" />
             Export
           </Button>

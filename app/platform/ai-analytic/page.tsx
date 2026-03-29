@@ -22,7 +22,7 @@ export default function AIAnalyticsPage() {
     <div className="max-w-6xl mx-auto w-full space-y-8 px-4 pb-20">
 
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-6">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-border pb-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
             AI Analytics <div className="px-2 py-0.5 bg-primary/10 text-primary text-[10px] rounded-md tracking-widest uppercase">Pro</div>
@@ -31,11 +31,11 @@ export default function AIAnalyticsPage() {
             Insight cerdas dari percakapan dan perilaku pelanggan Anda.
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="rounded-xl h-10 text-xs font-bold border-border">
+        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+          <Button variant="outline" className="w-full sm:w-auto rounded-xl h-10 text-xs font-bold border-border">
             <Filter className="w-3.5 h-3.5 mr-2" /> Filter
           </Button>
-          <Button className="bg-primary text-white rounded-xl h-10 px-5 text-xs font-bold shadow-lg shadow-primary/20">
+          <Button className="w-full sm:w-auto bg-primary text-white rounded-xl h-10 px-5 text-xs font-bold shadow-lg shadow-primary/20">
             Generate Report
           </Button>
         </div>

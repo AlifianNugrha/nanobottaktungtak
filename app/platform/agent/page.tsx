@@ -149,7 +149,7 @@ export default function AgentPage() {
     <div className="max-w-6xl mx-auto w-full space-y-8 px-4 pb-20">
 
       {/* HEADER */}
-      <div className="flex items-center justify-between gap-4 border-b border-border pb-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-border pb-6">
         <div className="flex items-center gap-4">
           {(view === 'add' || view === 'edit') && (
             <Button variant="outline" size="icon" onClick={() => setView('list')} className="rounded-xl h-10 w-10">
@@ -167,7 +167,7 @@ export default function AgentPage() {
         </div>
 
         {view === 'list' && (
-          <Button onClick={openAddMode} className="bg-primary hover:bg-primary/90 text-white gap-2 h-11 px-6 font-bold shadow-lg shadow-primary/20 rounded-xl">
+          <Button onClick={openAddMode} className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white gap-2 h-11 px-6 font-bold shadow-lg shadow-primary/20 rounded-xl">
             <Plus className="w-4 h-4" /> Create Agent
           </Button>
         )}
@@ -219,14 +219,6 @@ export default function AgentPage() {
 
           {/* SISI KIRI: MEDIA & KNOWLEDGE */}
           <div className="space-y-6">
-            <Card className="p-6 text-center space-y-4">
-              <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest text-center block">Agent Avatar</Label>
-              <div className="relative mx-auto w-32 h-32 border-2 border-dashed border-primary/20 rounded-[2.5rem] flex flex-col items-center justify-center bg-gray-50 hover:bg-primary/5 transition-colors cursor-pointer group">
-                <Upload className="w-6 h-6 text-muted-foreground group-hover:text-primary" />
-                <span className="text-[9px] font-bold mt-1 text-muted-foreground group-hover:text-primary uppercase">Upload</span>
-              </div>
-            </Card>
-
             <Card className="p-6 space-y-4 border-l-4 border-l-primary shadow-sm">
               <div className="flex items-center justify-between">
                 <Label className="text-[10px] font-bold uppercase text-muted-foreground">Knowledge Base</Label>

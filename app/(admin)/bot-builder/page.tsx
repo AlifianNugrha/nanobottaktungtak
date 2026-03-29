@@ -113,7 +113,7 @@ export default function BotBuilderPage() {
 
   return (
     <div className="max-w-5xl mx-auto w-full space-y-8 px-4 pb-20 animate-in fade-in duration-500 font-jakarta">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-border pb-6">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-3xl font-bold text-foreground tracking-tight">Bot Builder</h1>
@@ -126,7 +126,7 @@ export default function BotBuilderPage() {
               </Link>
             )}
           </div>
-          <p className="text-muted-foreground mt-1 text-sm">
+          <p className="text-muted-foreground mt-1 text-sm break-words max-w-[280px] sm:max-w-none">
             Connect your AI Agents to your preferred platforms.
           </p>
         </div>
@@ -135,12 +135,12 @@ export default function BotBuilderPage() {
           <Button
             onClick={() => setView('add')}
             disabled={bots.length >= limit}
-            className={`text-white gap-2 h-11 px-6 font-bold shadow-lg rounded-xl transition-all ${bots.length >= limit ? 'bg-gray-300 cursor-not-allowed text-gray-500 shadow-none' : 'bg-primary hover:bg-primary/90 shadow-primary/20'}`}
+            className={`w-full sm:w-auto text-white gap-2 h-11 px-6 font-bold shadow-lg rounded-xl transition-all ${bots.length >= limit ? 'bg-gray-300 cursor-not-allowed text-gray-500 shadow-none' : 'bg-primary hover:bg-primary/90 shadow-primary/20'}`}
           >
             {bots.length >= limit ? 'Limit Reached' : <><Plus className="w-4 h-4" /> Add Bot</>}
           </Button>
         ) : (
-          <Button variant="ghost" onClick={() => setView('list')} className="gap-2 font-bold">
+          <Button variant="ghost" onClick={() => setView('list')} className="w-full sm:w-auto gap-2 font-bold justify-center sm:justify-start">
             <ArrowLeft className="w-4 h-4" />
             Back to List
           </Button>
@@ -158,28 +158,28 @@ export default function BotBuilderPage() {
 
               return (
                 <Card key={bot.id} className="p-4 border-border bg-white hover:border-primary/30 transition-all group rounded-2xl">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-5">
-                      <div className={cn("w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center border border-border shadow-sm group-hover:scale-105 transition-transform", color)}>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4 w-full min-w-0">
+                      <div className={cn("w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center border border-border shadow-sm group-hover:scale-105 transition-transform shrink-0", color)}>
                         <Icon className="w-7 h-7" />
                       </div>
 
-                      <div className="space-y-1">
-                        <h3 className="font-bold text-lg text-foreground tracking-tight">{bot.name}</h3>
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                            <Layers className="w-3.5 h-3.5" />
-                            Agent: <span className="text-foreground font-bold">{bot.agent?.name || 'Unknown'}</span>
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <h3 className="font-bold text-lg text-foreground tracking-tight truncate w-full">{bot.name}</h3>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 w-full min-w-0">
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0 truncate">
+                            <Layers className="w-3.5 h-3.5 shrink-0" />
+                            <span className="shrink-0">Agent:</span> <span className="text-foreground font-bold truncate">{bot.agent?.name || 'Unknown'}</span>
                           </div>
-                          <span className="text-gray-300">|</span>
-                          <div className="text-[10px] font-bold uppercase tracking-widest text-primary">
+                          <span className="text-gray-300 hidden sm:block shrink-0">|</span>
+                          <div className="text-[10px] font-bold uppercase tracking-widest text-primary shrink-0">
                             {config.platform || 'General'}
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-end gap-2 w-full sm:w-auto mt-2 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-0 border-border/50">
                       <Button variant="ghost" size="icon" onClick={() => handleDelete(bot.id)} className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl">
                         <Trash2 className="w-4 h-4" />
                       </Button>

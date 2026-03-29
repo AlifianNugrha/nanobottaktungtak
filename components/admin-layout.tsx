@@ -25,10 +25,10 @@ export async function AdminLayout({ children }: { children: React.ReactNode }) {
   const isPro = role === 'PRO_USER' || role === 'ADMIN';
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-background font-jakarta">
+    <div className="flex flex-col md:flex-row h-[100dvh] w-full overflow-hidden bg-background font-jakarta">
       <Sidebar isPro={isPro} userName={userName} role={role} userEmail={user?.email} userImage={userImage} />
-      <main className="flex-1 w-full min-w-0 overflow-x-hidden p-4 md:p-8">
-        <div className="max-w-7xl mx-auto">
+      <main className="flex-1 w-full min-w-0 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-8">
+        <div className="max-w-7xl mx-auto w-full overflow-hidden break-words">
           {children}
         </div>
       </main>

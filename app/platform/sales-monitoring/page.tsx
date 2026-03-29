@@ -39,16 +39,16 @@ export default function SalesMonitoringPage() {
     <div className="max-w-6xl mx-auto w-full space-y-8 px-4 pb-20">
 
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-6">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-border pb-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Sales Monitoring</h1>
           <p className="text-muted-foreground text-sm mt-1">Pantau performa penjualan dan transaksi real-time.</p>
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline" className="rounded-xl gap-2 font-bold h-11">
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <Button variant="outline" className="w-full sm:w-auto rounded-xl gap-2 font-bold h-11">
             <Calendar className="w-4 h-4" /> Last 30 Days
           </Button>
-          <Button className="bg-primary text-white rounded-xl gap-2 font-bold h-11 px-6 shadow-lg shadow-primary/20">
+          <Button className="w-full sm:w-auto bg-primary text-white rounded-xl gap-2 font-bold h-11 px-6 shadow-lg shadow-primary/20">
             <Download className="w-4 h-4" /> Export Report
           </Button>
         </div>
@@ -107,9 +107,9 @@ export default function SalesMonitoringPage() {
 
       {/* RECENT TRANSACTIONS TABLE */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h3 className="font-bold text-lg">Recent Transactions</h3>
-          <div className="relative w-64">
+          <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Search orders..."

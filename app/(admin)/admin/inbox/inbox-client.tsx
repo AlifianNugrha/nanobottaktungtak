@@ -7,11 +7,27 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, Send, Phone, MoreVertical, PauseCircle, PlayCircle, Bot, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useLanguage } from '@/components/language-provider';
+
+function formatWhatsAppNumber(jid: string) {
+    if (!jid) return 'Unknown';
+    // Hapus domain (@s.whatsapp.net, @lid, @newsletter, etc)
+    let num = jid.split('@')[0];
+    
+    // Jika tidak mengandung huruf (murni angka nomor HP)
+    if (/^\d+$/.test(num)) {
+        if (num.startsWith('62')) {
+            // Format Indo: +62 8xx-xxxx-xxxx
+            return '+' + num.slice(0, 2) + ' ' + num.slice(2, 5) + '-' + num.slice(5, 9) + '-' + num.slice(9);
+        }
+        return '+' + num; // Negara lain
+    }
+    
+    return num; // Untuk JID aneh seperti username
+}
 
 interface Message {
     role: 'user' | 'assistant';
@@ -22,6 +38,7 @@ interface Message {
 interface Conversation {
     id: string;
     contactNumber: string;
+    contactName: string | null;
     messages: any; // Prisma Json
     isBotPaused: boolean;
     lastMessage: string | null;
@@ -40,10 +57,19 @@ export function InboxClient({ initialConversations, userId }: { initialConversat
     const [messageInput, setMessageInput] = useState('');
     const [isSending, setIsSending] = useState(false);
     const [mounted, setMounted] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
     const router = useRouter();
     const scrollRef = useRef<HTMLDivElement>(null);
 
     const selectedConversation = conversations.find(c => c.id === selectedId);
+
+    const filteredConversations = conversations.filter(conv => {
+        const displayName = conv.contactName || formatWhatsAppNumber(conv.contactNumber);
+        const q = searchQuery.toLowerCase();
+        return displayName.toLowerCase().includes(q) || 
+            conv.contactNumber.toLowerCase().includes(q) || 
+            (conv.lastMessage && conv.lastMessage.toLowerCase().includes(q));
+    });
 
     // Auto-scroll to bottom of chat
     useEffect(() => {
@@ -106,26 +132,28 @@ export function InboxClient({ initialConversations, userId }: { initialConversat
     }
 
     async function handleToggleBot() {
-        if (!selectedConversation) return;
-
-        const newStatus = !selectedConversation.isBotPaused;
-
-        // Optimistic
-        setConversations(prev => prev.map(c =>
-            c.id === selectedId ? { ...c, isBotPaused: newStatus } : c
+        if (!selectedId || !selectedConversation) return;
+        const newPaused = !selectedConversation.isBotPaused;
+        
+        // Optimistic UI update
+        setConversations(prev => prev.map(c => 
+            c.id === selectedId ? { ...c, isBotPaused: newPaused } : c
         ));
 
-        const result = await toggleBotStatus(selectedId!, newStatus);
-
+        const result = await toggleBotStatus(selectedId, newPaused);
         if (result.success) {
-            toast.success(newStatus ? `${t('Bot paused')} ⏸️` : `${t('Bot activated')} ✅`);
+            toast.success(newPaused ? t('Bot paused. You can now reply manually.') : t('Bot resumed. AI will respond automatically.'));
         } else {
-            toast.error(t('Failed to change bot status'));
+            // Revert on failure
+            setConversations(prev => prev.map(c => 
+                c.id === selectedId ? { ...c, isBotPaused: !newPaused } : c
+            ));
+            toast.error(t('Failed to toggle bot status'));
         }
     }
 
     return (
-        <div className="flex w-full h-full bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden m-4 md:m-0">
+        <div className="flex w-full h-full bg-white border-0 md:border border-slate-200 shadow-none md:shadow-sm rounded-none md:rounded-xl overflow-hidden m-0">
 
             {/* LEFT: Contact List */}
             <div className={`w-full md:w-80 flex flex-col border-r border-slate-200 ${selectedId ? 'hidden md:flex' : 'flex'}`}>
@@ -134,19 +162,24 @@ export function InboxClient({ initialConversations, userId }: { initialConversat
                     <h2 className="font-bold text-lg mb-4">{t('Inbox')}</h2>
                     <div className="relative">
                         <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                        <Input placeholder={t('Search contacts...')} className="pl-9 bg-white" />
+                        <Input 
+                            placeholder={t('Search contacts...')} 
+                            className="pl-9 bg-white" 
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
                     </div>
                 </div>
 
                 {/* List */}
-                <ScrollArea className="flex-1">
+                <div className="flex-1 overflow-y-auto min-h-0">
                     <div className="divide-y divide-slate-100">
-                        {conversations.length === 0 ? (
+                        {filteredConversations.length === 0 ? (
                             <div className="p-8 text-center text-slate-500 text-sm">
                                 {t('No conversations yet.')}
                             </div>
                         ) : (
-                            conversations.map((conv) => (
+                            filteredConversations.map((conv) => (
                                 <div
                                     key={conv.id}
                                     onClick={() => setSelectedId(conv.id)}
@@ -156,14 +189,14 @@ export function InboxClient({ initialConversations, userId }: { initialConversat
                                     )}
                                 >
                                     <Avatar>
-                                        <AvatarFallback className="bg-[#1E90FF]/10 text-[#1E90FF] font-bold">
-                                            {conv.contactNumber.slice(-2)}
+                                        <AvatarFallback className="bg-[#1E90FF]/10 text-[#1E90FF] font-bold text-xs uppercase">
+                                            {(conv.contactName || conv.contactNumber.split('@')[0]).slice(0, 2)}
                                         </AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex justify-between items-center mb-1">
                                             <span className="font-semibold text-sm truncate">
-                                                {conv.contactNumber.replace('@s.whatsapp.net', '')}
+                                                {conv.contactName || formatWhatsAppNumber(conv.contactNumber)}
                                             </span>
                                             <span className="text-[10px] text-slate-400">
                                                 {mounted ? new Date(conv.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
@@ -180,7 +213,7 @@ export function InboxClient({ initialConversations, userId }: { initialConversat
                             ))
                         )}
                     </div>
-                </ScrollArea>
+                </div>
             </div>
 
             {/* RIGHT: Chat Window */}
@@ -188,43 +221,43 @@ export function InboxClient({ initialConversations, userId }: { initialConversat
                 <div className={`flex-1 flex flex-col ${selectedId ? 'flex' : 'hidden md:flex'}`}>
 
                     {/* Header Chat */}
-                    <div className="h-16 border-b border-slate-200 flex items-center justify-between px-6 bg-white shrink-0">
-                        <div className="flex items-center gap-3">
-                            <Button variant="ghost" size="icon" className="md:hidden -ml-2" onClick={() => setSelectedId(null)}>
+                    <div className="h-16 border-b border-slate-200 flex items-center justify-between px-2 sm:px-6 bg-white shrink-0">
+                        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                            <Button variant="ghost" size="icon" className="md:hidden shrink-0" onClick={() => setSelectedId(null)}>
                                 <span className="sr-only">{t('Back')}</span>
                                 ⬅
                             </Button>
-                            <Avatar className="h-9 w-9">
-                                <AvatarFallback className="bg-slate-100 text-slate-600">
-                                    {selectedConversation.contactNumber.slice(-2)}
+                            <Avatar className="h-9 w-9 shrink-0">
+                                <AvatarFallback className="bg-slate-100 text-slate-600 text-xs uppercase">
+                                    {(selectedConversation.contactName || selectedConversation.contactNumber.split('@')[0]).slice(0, 2)}
                                 </AvatarFallback>
                             </Avatar>
-                            <div>
-                                <h3 className="font-bold text-sm">
-                                    {selectedConversation.contactNumber.replace('@s.whatsapp.net', '')}
+                            <div className="min-w-0 flex-1">
+                                <h3 className="font-bold text-sm truncate w-full">
+                                    {selectedConversation.contactName || formatWhatsAppNumber(selectedConversation.contactNumber)}
                                 </h3>
-                                <div className="flex items-center gap-1.5">
-                                    <span className={cn("w-2 h-2 rounded-full", selectedConversation.isBotPaused ? "bg-amber-500" : "bg-green-500")} />
-                                    <span className="text-[10px] text-slate-500 font-medium">
+                                <div className="flex items-center gap-1.5 truncate">
+                                    <span className={cn("w-2 h-2 rounded-full shrink-0", selectedConversation.isBotPaused ? "bg-amber-500" : "bg-green-500")} />
+                                    <span className="text-[10px] text-slate-500 font-medium truncate">
                                         {selectedConversation.isBotPaused ? t('Bot Paused (Manual Mode)') : t('Bot Active')}
                                     </span>
                                 </div>
                             </div>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 shrink-0 ml-2">
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className={cn("gap-2 text-xs", selectedConversation.isBotPaused ? "text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100 border-green-200" : "text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 border-amber-200")}
+                                className={cn("gap-1 sm:gap-2 text-xs", selectedConversation.isBotPaused ? "text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100 border-green-200" : "text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 border-amber-200")}
                                 onClick={handleToggleBot}
                             >
                                 {selectedConversation.isBotPaused ? (
                                     <>
-                                        <PlayCircle className="w-3.5 h-3.5" /> {t('Resume Bot')}
+                                        <PlayCircle className="w-3.5 h-3.5 shrink-0" /> <span className="hidden sm:inline">{t('Resume Bot')}</span><span className="sm:hidden">Resume</span>
                                     </>
                                 ) : (
                                     <>
-                                        <PauseCircle className="w-3.5 h-3.5" /> {t('Pause Bot')}
+                                        <PauseCircle className="w-3.5 h-3.5 shrink-0" /> <span className="hidden sm:inline">{t('Pause Bot')}</span><span className="sm:hidden">Pause</span>
                                     </>
                                 )}
                             </Button>
@@ -232,16 +265,16 @@ export function InboxClient({ initialConversations, userId }: { initialConversat
                     </div>
 
                     {/* Messages Area */}
-                    <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50 space-y-4 scroll-smooth" ref={scrollRef}>
+                    <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50/50 space-y-4 scroll-smooth" ref={scrollRef}>
                         {((selectedConversation.messages as any[]) || []).map((msg, idx) => {
                             const isUser = msg.role === 'user';
                             return (
                                 <div key={idx} className={cn("flex w-full", isUser ? "justify-start" : "justify-end")}>
                                     <div className={cn(
-                                        "max-w-[70%] rounded-2xl px-4 py-2.5 text-sm shadow-sm",
-                                        isUser ? "bg-white border border-slate-100 text-slate-800 rounded-bl-none" : "bg-[#1E90FF] text-white rounded-br-none"
+                                        "max-w-[85%] sm:max-w-[70%] rounded-2xl px-4 py-2.5 text-sm shadow-sm break-words overflow-hidden",
+                                        isUser ? "bg-white border border-slate-100 text-slate-800 rounded-bl-sm" : "bg-[#1E90FF] text-white rounded-br-sm"
                                     )}>
-                                        <p className="whitespace-pre-wrap">{msg.content}</p>
+                                        <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                                         <span className={cn("text-[9px] block mt-1 opacity-70", isUser ? "text-right" : "text-left")}>
                                             {mounted ? new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                                         </span>

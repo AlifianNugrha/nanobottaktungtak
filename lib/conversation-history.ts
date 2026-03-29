@@ -49,8 +49,9 @@ export async function getConversationHistory(
 export async function saveMessageToHistory(
     integrationId: string,
     contactNumber: string,
-    userMessage: string,
-    botResponse: string
+    userMessage: string | null,
+    botResponse: string | null,
+    contactName?: string
 ): Promise<void> {
     try {
         // Get existing conversation
@@ -67,21 +68,41 @@ export async function saveMessageToHistory(
         const messages = (existing?.messages as unknown as Message[]) || [];
 
         // Add user message
-        messages.push({
-            role: 'user',
-            content: userMessage,
-            timestamp
-        });
+        if (userMessage) {
+            messages.push({
+                role: 'user',
+                content: userMessage,
+                timestamp
+            });
+        }
 
         // Add bot response
-        messages.push({
-            role: 'assistant',
-            content: botResponse,
-            timestamp
-        });
+        if (botResponse) {
+            messages.push({
+                role: 'assistant',
+                content: botResponse,
+                timestamp
+            });
+        }
 
         // Keep only last MAX_HISTORY_MESSAGES * 2 (user + assistant pairs)
         const recentMessages = messages.slice(-(MAX_HISTORY_MESSAGES * 2));
+
+        // Build data with optional contactName
+        const createData: any = {
+            integrationId,
+            contactNumber,
+            messages: recentMessages as any
+        };
+        const updateData: any = {
+            messages: recentMessages as any,
+            updatedAt: new Date()
+        };
+
+        if (contactName) {
+            createData.contactName = contactName;
+            updateData.contactName = contactName;
+        }
 
         // Upsert conversation
         await prisma.conversation.upsert({
@@ -91,18 +112,11 @@ export async function saveMessageToHistory(
                     contactNumber
                 }
             },
-            create: {
-                integrationId,
-                contactNumber,
-                messages: recentMessages as any // Cast to any to satisfy Prisma Json input
-            },
-            update: {
-                messages: recentMessages as any, // Cast to any to satisfy Prisma Json input
-                updatedAt: new Date()
-            }
+            create: createData,
+            update: updateData
         });
 
-        console.log(`Saved conversation for ${contactNumber} (${recentMessages.length} messages)`);
+        console.log(`Saved conversation for ${contactName || contactNumber} (${recentMessages.length} messages)`);
     } catch (error) {
         console.error('Error saving conversation:', error);
     }

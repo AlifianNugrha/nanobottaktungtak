@@ -95,7 +95,7 @@ export default function ProductManagerPage() {
     <div className="max-w-6xl mx-auto w-full space-y-8 px-4 pb-20">
 
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-6">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-border pb-6">
         <div className="flex items-center gap-4">
           {view !== 'list' && (
             <Button variant="outline" size="icon" onClick={() => setView('list')} className="rounded-xl h-10 w-10">
@@ -111,11 +111,11 @@ export default function ProductManagerPage() {
         </div>
 
         {view === 'list' && (
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
             {/* MODAL MANAGE CATEGORY */}
             <Dialog open={isCatModalOpen} onOpenChange={setIsCatModalOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="gap-2 h-11 px-5 font-bold rounded-xl border-border">
+                <Button variant="outline" className="w-full sm:w-auto gap-2 h-11 px-5 font-bold rounded-xl border-border">
                   <Tags className="w-4 h-4" /> Categories
                 </Button>
               </DialogTrigger>
@@ -150,7 +150,7 @@ export default function ProductManagerPage() {
               </DialogContent>
             </Dialog>
 
-            <Button onClick={() => setView('add')} className="bg-primary hover:bg-primary/90 text-white gap-2 h-11 px-6 font-bold shadow-lg shadow-primary/20 rounded-xl">
+            <Button onClick={() => setView('add')} className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white gap-2 h-11 px-6 font-bold shadow-lg shadow-primary/20 rounded-xl">
               <Plus className="w-4 h-4" /> Add Product
             </Button>
           </div>

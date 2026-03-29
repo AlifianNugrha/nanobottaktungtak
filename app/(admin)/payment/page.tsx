@@ -96,7 +96,7 @@ export default function PaymentPage() {
     <div className="max-w-6xl mx-auto w-full space-y-8 px-4 pb-20">
 
       {/* HEADER: Dinamis sesuai View */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-border pb-6">
         <div className="flex items-center gap-4">
           {view === 'logic' && (
             <Button variant="outline" size="icon" onClick={() => setView('main')} className="rounded-xl shrink-0">
@@ -114,8 +114,8 @@ export default function PaymentPage() {
         </div>
 
         {view === 'main' && (
-          <div className="flex items-center gap-3 bg-primary/5 px-4 py-2 rounded-2xl border border-primary/10">
-            <div className="flex flex-col items-end">
+          <div className="flex items-center justify-between w-full sm:w-auto gap-3 bg-primary/5 px-4 py-3 sm:py-2 rounded-2xl border border-primary/10">
+            <div className="flex flex-col items-start sm:items-end">
               <span className="text-[10px] font-bold text-primary uppercase">AI Closing Mode</span>
               <span className="text-xs font-bold">{isAiClosingEnabled ? 'ACTIVE' : 'DISABLED'}</span>
             </div>

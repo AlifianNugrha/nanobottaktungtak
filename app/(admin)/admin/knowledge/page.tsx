@@ -31,7 +31,7 @@ export default async function KnowledgePage() {
                 </div>
             </div>
 
-            <div className="hidden h-full flex-1 flex-col space-y-8 md:flex">
+            <div className="h-full flex-1 flex-col space-y-8 flex">
                 <KnowledgeClient initialDocs={docs} agents={agents} userId={user.id} />
             </div>
         </div>

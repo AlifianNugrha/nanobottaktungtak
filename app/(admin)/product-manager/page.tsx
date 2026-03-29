@@ -183,7 +183,7 @@ export default function ProductManagerPage() {
     <div className="max-w-6xl mx-auto w-full space-y-8 px-4 pb-20">
 
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-6">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-border pb-6">
         <div className="flex items-center gap-4">
           {view !== 'list' && (
             <Button variant="outline" size="icon" onClick={() => setView('list')} className="rounded-xl h-10 w-10">
@@ -213,11 +213,11 @@ export default function ProductManagerPage() {
         </div>
 
         {view === 'list' && (
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
             {/* MODAL MANAGE CATEGORY */}
             <Dialog open={isCatModalOpen} onOpenChange={setIsCatModalOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="gap-2 h-11 px-5 font-bold rounded-xl border-border">
+                <Button variant="outline" className="w-full sm:w-auto gap-2 h-11 px-5 font-bold rounded-xl border-border">
                   <Tags className="w-4 h-4" /> Categories
                 </Button>
               </DialogTrigger>
@@ -234,13 +234,13 @@ export default function ProductManagerPage() {
                       className="h-11 rounded-xl bg-gray-50"
                       onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
                     />
-                    <Button onClick={handleAddCategory} className="bg-primary text-white h-11 px-4 rounded-xl">
+                    <Button onClick={handleAddCategory} className="bg-[#1E90FF] text-white h-11 px-4 rounded-xl">
                       <Plus className="w-5 h-5" />
                     </Button>
                   </div>
                   <div className="space-y-2 max-h-[250px] overflow-y-auto pr-2">
                     {categories.map(cat => (
-                      <div key={cat} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-transparent hover:border-primary/20 transition-all">
+                      <div key={cat} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-transparent hover:border-[#1E90FF]/20 transition-all">
                         <span className="text-sm font-medium">{cat}</span>
                         {cat !== 'General' && (
                           <X className="w-4 h-4 text-muted-foreground cursor-pointer hover:text-destructive" onClick={() => deleteCategory(cat)} />
@@ -255,7 +255,7 @@ export default function ProductManagerPage() {
             <Button
               onClick={() => setView('add')}
               disabled={products.length >= limit}
-              className={`text-white gap-2 h-11 px-6 font-bold shadow-lg rounded-xl transition-all ${products.length >= limit ? 'bg-gray-300 cursor-not-allowed text-gray-500 shadow-none' : 'bg-primary hover:bg-primary/90 shadow-primary/20'}`}
+              className={`w-full sm:w-auto text-white gap-2 h-11 px-6 font-bold shadow-lg rounded-xl transition-all ${products.length >= limit ? 'bg-gray-300 cursor-not-allowed text-gray-500 shadow-none' : 'bg-[#1E90FF] hover:bg-[#187bcd] shadow-[#1E90FF]/20'}`}
             >
               {products.length >= limit ? 'Limit Reached' : <><Plus className="w-4 h-4" /> Add Product</>}
             </Button>
