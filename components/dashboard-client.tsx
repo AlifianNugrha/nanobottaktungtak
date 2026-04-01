@@ -19,6 +19,7 @@ import { getDashboardStats } from '@/app/actions/dashboard-actions';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from './ui/button';
+import { useLanguage } from './language-provider';
 
 const dashboardData = [
     { month: 'Jan', users: 2400, revenue: 2210, engagement: 2290 },
@@ -30,11 +31,12 @@ const dashboardData = [
 ];
 
 export function DashboardClient({ isPro, userName, userEmail, companyName, userImage }: { isPro: boolean; userName: string; userEmail: string; companyName: string; userImage?: string }) {
+    const { t } = useLanguage();
     const [statsData, setStatsData] = useState({
         totalAgents: 0,
         totalBots: 0,
         activeNodes: 0,
-        systemStatus: 'Loading...',
+        systemStatus: t('Loading...'),
         monthlyGrowth: [] as any[],
         isAdmin: false
     });
@@ -53,32 +55,32 @@ export function DashboardClient({ isPro, userName, userEmail, companyName, userI
     // Stats data
     const stats = [
         {
-            title: 'AI Agents',
+            title: t('AI Agents'),
             value: statsData.totalAgents.toString(),
             change: '+100%',
             icon: Users,
             color: 'text-[#1E90FF]',
         },
         {
-            title: 'Active Bots',
+            title: t('Active Bots'),
             value: statsData.totalBots.toString(),
             change: '+100%',
             icon: Bot,
             color: 'text-[#1E90FF]',
         },
         {
-            title: 'AI Interactions',
+            title: t('AI Interactions'),
             // @ts-ignore
             value: (statsData.aiInteractions || 0).toString(),
-            change: 'Real-time',
+            change: t('Real-time'),
             icon: Zap,
             color: 'text-[#1E90FF]',
         },
         {
-            title: 'Total Leads',
+            title: t('Total Leads'),
             // @ts-ignore
             value: (statsData.totalLeads || 0).toString(),
-            change: 'Active',
+            change: t('Active'),
             icon: TrendingUp,
             color: 'text-[#1E90FF]',
         },
@@ -92,7 +94,7 @@ export function DashboardClient({ isPro, userName, userEmail, companyName, userI
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
-                        <h1 className="text-3xl font-bold text-foreground tracking-tight">Dashboard</h1>
+                        <h1 className="text-3xl font-bold text-foreground tracking-tight">{t('Dashboard')}</h1>
                         {isPro && (
                             <div className="bg-[#1E90FF] text-white text-[10px] font-black px-2 py-1 rounded-full uppercase flex items-center gap-1 shadow-lg shadow-[#1E90FF]/20">
                                 <Crown className="w-3 h-3" /> Pro
@@ -100,7 +102,7 @@ export function DashboardClient({ isPro, userName, userEmail, companyName, userI
                         )}
                     </div>
                     <p className="text-muted-foreground text-sm">
-                        {isPro ? "Advanced analytics overview for your Pro workspace." : "Welcome back! Here's your analytics overview."}
+                        {isPro ? t("Advanced analytics overview for your Pro workspace.") : t("Welcome back! Here's your analytics overview.")}
                     </p>
                 </div>
 
@@ -110,15 +112,15 @@ export function DashboardClient({ isPro, userName, userEmail, companyName, userI
                         {userImage ? (
                             <img src={userImage} alt={userName} className="w-full h-full object-cover" />
                         ) : (
-                            userName ? userName.substring(0, 2) : 'US'
+                            userName ? userName.substring(0, 2) : t('US')
                         )}
                     </div>
                     <div className="flex-1 overflow-hidden">
                         <p className="font-bold text-sm text-foreground truncate">{userName}</p>
-                        <p className="text-xs text-muted-foreground truncate">{companyName || 'No Company'}</p>
+                        <p className="text-xs text-muted-foreground truncate">{companyName || t('No Company')}</p>
                     </div>
                     <div className="text-[10px] font-bold uppercase text-[#1E90FF] bg-[#1E90FF]/10 px-2 py-1 rounded-lg">
-                        You
+                        {t('You')}
                     </div>
                 </div>
             </div>
@@ -145,7 +147,7 @@ export function DashboardClient({ isPro, userName, userEmail, companyName, userI
                                         <span className="text-xs font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded uppercase">
                                             {stat.change}
                                         </span>
-                                        <span className="text-[10px] text-muted-foreground lowercase">vs last month</span>
+                                        <span className="text-[10px] text-muted-foreground lowercase">{t('vs last month')}</span>
                                     </div>
                                 </div>
                                 <div className="p-2 rounded-xl bg-primary/5 text-primary">
@@ -162,8 +164,8 @@ export function DashboardClient({ isPro, userName, userEmail, companyName, userI
                 {/* Growth Line Chart */}
                 <Card className="p-6 bg-white border-border shadow-sm">
                     <div className="mb-6">
-                        <h3 className="text-lg font-semibold text-foreground">{statsData.isAdmin ? 'User Growth' : 'Bot Usage Growth'}</h3>
-                        <p className="text-xs text-muted-foreground">Real-time accumulation data</p>
+                        <h3 className="text-lg font-semibold text-foreground">{statsData.isAdmin ? t('User Growth') : t('Bot Usage Growth')}</h3>
+                        <p className="text-xs text-muted-foreground">{t('Real-time accumulation data')}</p>
                     </div>
                     <ResponsiveContainer width="100%" height={300}>
                         <LineChart data={statsData.monthlyGrowth}>
@@ -196,7 +198,7 @@ export function DashboardClient({ isPro, userName, userEmail, companyName, userI
                                 strokeWidth={3}
                                 dot={{ r: 4, fill: 'var(--primary)', strokeWidth: 2, stroke: '#fff' }}
                                 activeDot={{ r: 6, strokeWidth: 0 }}
-                                name={statsData.isAdmin ? "New Users" : "Bots Created"}
+                                name={statsData.isAdmin ? t("New Users") : t("Bots Created")}
                             />
                         </LineChart>
                     </ResponsiveContainer>
@@ -205,8 +207,8 @@ export function DashboardClient({ isPro, userName, userEmail, companyName, userI
                 {/* Revenue Bar Chart */}
                 <Card className="p-6 bg-white border-border shadow-sm">
                     <div className="mb-6">
-                        <h3 className="text-lg font-semibold text-foreground">{statsData.isAdmin ? 'System Volume' : 'Bot Interactions'}</h3>
-                        <p className="text-xs text-muted-foreground">Activity metrics</p>
+                        <h3 className="text-lg font-semibold text-foreground">{statsData.isAdmin ? t('System Volume') : t('Bot Interactions')}</h3>
+                        <p className="text-xs text-muted-foreground">{t('Activity metrics')}</p>
                     </div>
                     <ResponsiveContainer width="100%" height={300}>
                         <BarChart data={statsData.monthlyGrowth} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
@@ -228,7 +230,7 @@ export function DashboardClient({ isPro, userName, userEmail, companyName, userI
                                 }}
                             />
                             <Legend iconType="circle" />
-                            <Bar dataKey="bots" name="Active Bots" fill="var(--primary)" radius={[4, 4, 0, 0]} barSize={20} />
+                            <Bar dataKey="bots" name={t("Active Bots")} fill="var(--primary)" radius={[4, 4, 0, 0]} barSize={20} />
                         </BarChart>
                     </ResponsiveContainer>
                 </Card>

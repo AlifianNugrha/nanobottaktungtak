@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { MoreHorizontal, Plus, Search } from 'lucide-react';
 import { useState } from 'react';
+import { useLanguage } from '@/components/language-provider';
 
 const usersData = [
   {
@@ -107,6 +108,7 @@ const getStatusBadgeColor = (status: string) => {
 };
 
 export default function Users() {
+  const { t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredUsers = usersData.filter(
@@ -119,14 +121,14 @@ export default function Users() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-border pb-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Users</h1>
+          <h1 className="text-3xl font-bold text-foreground">{t('Users')}</h1>
           <p className="text-muted-foreground mt-2">
-            Manage and monitor all users in the system.
+            {t('Manage and monitor all users in the system.')}
           </p>
         </div>
         <Button className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground gap-2 rounded-xl">
           <Plus className="w-4 h-4" />
-          Add User
+          {t('Add User')}
         </Button>
       </div>
 
@@ -135,7 +137,7 @@ export default function Users() {
           <div className="flex items-center gap-2 bg-secondary rounded-lg px-3 py-2 border border-border">
             <Search className="w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Search users by name or email..."
+              placeholder={t("Search users by name or email...")}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="border-0 bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none"
@@ -147,15 +149,15 @@ export default function Users() {
           <Table>
             <TableHeader className="border-b border-border">
               <TableRow className="hover:bg-transparent">
-                <TableHead className="text-muted-foreground">Name</TableHead>
-                <TableHead className="text-muted-foreground">Email</TableHead>
-                <TableHead className="text-muted-foreground">Role</TableHead>
-                <TableHead className="text-muted-foreground">Status</TableHead>
+                <TableHead className="text-muted-foreground">{t('Name')}</TableHead>
+                <TableHead className="text-muted-foreground">{t('Email')}</TableHead>
+                <TableHead className="text-muted-foreground">{t('Role')}</TableHead>
+                <TableHead className="text-muted-foreground">{t('Status')}</TableHead>
                 <TableHead className="text-muted-foreground">
-                  Join Date
+                  {t('Join Date')}
                 </TableHead>
                 <TableHead className="text-muted-foreground text-right">
-                  Actions
+                  {t('Actions')}
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -178,7 +180,7 @@ export default function Users() {
                   </TableCell>
                   <TableCell>
                     <Badge className={getStatusBadgeColor(user.status)}>
-                      {user.status}
+                      {t(user.status)}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
@@ -200,21 +202,21 @@ export default function Users() {
         </div>
 
         <div className="p-4 border-t border-border flex items-center justify-between text-sm text-muted-foreground">
-          <p>Showing {filteredUsers.length} of {usersData.length} users</p>
+          <p>{t('Showing')} {filteredUsers.length} {t('of')} {usersData.length} {t('users')}</p>
           <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
               className="border-border text-foreground hover:bg-secondary bg-transparent"
             >
-              Previous
+              {t('Previous')}
             </Button>
             <Button
               variant="outline"
               size="sm"
               className="border-border text-foreground hover:bg-secondary bg-transparent"
             >
-              Next
+              {t('Next')}
             </Button>
           </div>
         </div>

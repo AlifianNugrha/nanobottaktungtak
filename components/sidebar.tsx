@@ -89,36 +89,36 @@ export function Sidebar({ isPro, userName, role, userEmail, userImage }: { isPro
   return (
     <>
       {/* Mobile Header */}
-      <div className="md:hidden h-16 bg-card border-b border-border flex items-center px-4 justify-between sticky top-0 z-30 w-full shrink-0">
+      <div className="md:hidden h-16 bg-gradient-to-r from-blue-500 to-blue-600 border-b border-blue-400/30 flex items-center px-4 justify-between sticky top-0 z-30 w-full shrink-0">
         <div className="flex items-center gap-3">
           <button
-            className="p-2 -ml-2 text-foreground hover:bg-secondary rounded-lg transition-colors"
+            className="p-2 -ml-2 text-white hover:bg-white/10 rounded-lg transition-colors"
             onClick={() => setIsOpen(true)}
           >
             <Menu className="w-6 h-6" />
           </button>
           <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="NanoArtif" className="w-8 h-8 object-contain" />
-            <span className="font-bold text-lg tracking-tight">NanoArtif</span>
+            <img src="/logo.png" alt="NanoArtif" className="w-8 h-8 object-contain brightness-0 invert" />
+            <span className="font-bold text-lg tracking-tight text-white">NanoArtif</span>
           </div>
         </div>
       </div>
 
       <aside className={cn(
-        'fixed left-0 top-0 h-[100dvh] w-64 bg-card border-r border-border transition-transform duration-300 z-50 flex flex-col overflow-hidden',
+        'fixed left-0 top-0 h-[100dvh] w-64 bg-gradient-to-b from-blue-600 to-blue-500 border-r border-blue-400/30 transition-transform duration-300 z-50 flex flex-col overflow-hidden',
         'md:translate-x-0',
         isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
       )}>
         {/* Branding */}
-        <div className="p-4 border-b border-border bg-card shrink-0 flex items-center justify-between">
+        <div className="p-4 border-b border-white/10 shrink-0 flex items-center justify-between">
           <div className="flex items-center justify-center w-full">
             <div className="w-full flex justify-center items-center pointer-events-none select-none">
-              <img src="/logo.png" alt="NanoArtif" className="w-full h-auto object-contain max-h-12" />
+              <img src="/logo.png" alt="NanoArtif" className="w-full h-auto object-contain max-h-12 brightness-0 invert" />
             </div>
           </div>
           {/* Close button for mobile inside sidebar */}
           <button
-            className="md:hidden absolute right-4 text-muted-foreground hover:text-foreground"
+            className="md:hidden absolute right-4 text-white/70 hover:text-white"
             onClick={() => setIsOpen(false)}
           >
             <X className="w-5 h-5" />
@@ -129,7 +129,7 @@ export function Sidebar({ isPro, userName, role, userEmail, userImage }: { isPro
         <nav className="flex-1 px-3 py-4 space-y-4 overflow-y-auto scrollbar-hide overscroll-contain">
           {navCategories.map((category, idx) => (
             <div key={category.category}>
-              <h3 className="text-[10px] font-black text-muted-foreground/50 px-3 mb-2 uppercase tracking-[0.2em]">
+              <h3 className="text-[10px] font-black text-white px-3 mb-2 uppercase tracking-[0.2em]">
                 {category.category}
               </h3>
               <div className="space-y-1.5">
@@ -144,61 +144,61 @@ export function Sidebar({ isPro, userName, role, userEmail, userImage }: { isPro
                       className={cn(
                         'flex items-center gap-3 px-3 h-10 transition-all duration-200 rounded-lg relative group outline-none select-none',
                         isActive
-                          ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                          ? 'bg-white text-blue-600 shadow-md shadow-black/10'
                           : premium
-                            ? 'bg-gradient-to-r from-[#1E90FF]/10 to-[#1E90FF]/20 text-[#1E90FF] border border-[#1E90FF]/20'
+                            ? 'bg-gradient-to-r from-orange-300 to-orange-400 text-white shadow-md'
                             : isLocked
-                              ? 'opacity-40 grayscale hover:bg-transparent'
-                              : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                              ? 'opacity-40 grayscale hover:bg-transparent text-white/50'
+                              : 'text-white/80 hover:bg-white/10 hover:text-white'
                       )}
                     >
                       <Icon className={cn(
                         "w-5 h-5 shrink-0",
-                        isActive ? "text-white" : premium ? "text-[#1E90FF] animate-bounce-slow" : "text-muted-foreground/70"
+                        isActive ? "text-blue-600" : premium ? "text-white animate-bounce-slow" : "text-white/70 group-hover:text-white"
                       )} />
                       <span className={cn("text-[14px] font-bold tracking-tight whitespace-nowrap", premium && "uppercase font-black")}>
                         {label}
                       </span>
-                      {isLocked && <Lock className="ml-auto w-4 h-4 text-muted-foreground/60" />}
+                      {isLocked && <Lock className="ml-auto w-4 h-4 text-white/50" />}
                     </Link>
                   );
                 })}
               </div>
-              {idx === 0 && <div className="mt-4 border-b border-border/50 mx-2" />}
+              {idx === 0 && <div className="mt-4 border-b border-white/10 mx-2" />}
             </div>
           ))}
         </nav>
 
         {/* Area Bawah Tetap (Fixed Bottom) */}
-        <div className="p-4 border-t border-border bg-secondary/50 shrink-0 mt-auto">
-          <div className="flex items-center justify-between px-3 py-2.5 bg-card rounded-xl border border-border shadow-sm mb-3">
+        <div className="p-4 border-t border-white/10 shrink-0 mt-auto">
+          <div className="flex items-center justify-between px-3 py-2.5 bg-white/10 rounded-xl border border-white/20 shadow-sm mb-3 backdrop-blur-md">
             <div className="flex flex-col">
-              <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest leading-none mb-1">{t('Status')}</span>
-              <span className={cn("text-[13px] font-black", isPro ? "text-[#1E90FF]" : "text-primary")}>
+              <span className="text-[10px] font-black uppercase text-white/70 tracking-widest leading-none mb-1">{t('Status')}</span>
+              <span className={cn("text-[13px] font-black", isPro ? "text-yellow-300" : "text-white")}>
                 {t(isPro ? 'PRO PLAN' : 'FREE PLAN')}
               </span>
             </div>
-            {isPro && <Crown className="w-5 h-5 text-[#1E90FF]" />}
+            {isPro && <Crown className="w-5 h-5 text-yellow-300" />}
           </div>
 
-          <div className="flex items-center gap-4 px-2">
-            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white text-xs font-black uppercase overflow-hidden">
+          <div className="flex items-center gap-4 px-2 text-white">
+            <div className="w-10 h-10 rounded-full bg-white text-blue-600 flex items-center justify-center text-xs font-black uppercase overflow-hidden ring-2 ring-white/20">
               {userImage ? (
                 <img src={userImage} alt={userName} className="w-full h-full object-cover" />
               ) : (
-                userName.substring(0, 2)
+                userName ? userName.substring(0, 2) : t('US')
               )}
             </div>
             <div className="flex-1 overflow-hidden text-left">
-              <p className="text-[14px] font-bold truncate leading-none mb-1 text-foreground">{userName}</p>
-              <p className="text-[10px] text-muted-foreground truncate uppercase font-medium tracking-tighter">
+              <p className="text-[14px] font-bold truncate leading-none mb-1">{userName}</p>
+              <p className="text-[10px] text-white/70 truncate uppercase font-medium tracking-tighter">
                 {t(isPro ? 'Pro Workspace' : 'Free Workspace')}
               </p>
             </div>
             <button
               onClick={() => logout()}
-              className="p-2 text-muted-foreground hover:text-red-500 transition-colors"
-              title="Logout"
+              className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+              title={t('Logout')}
               suppressHydrationWarning
             >
               <LogOut className="w-5 h-5" />

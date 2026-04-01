@@ -48,8 +48,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getBots, deleteBot } from '@/app/actions/bot-actions';
 import { useRouter } from 'next/navigation';
+import { useLanguage } from '@/components/language-provider';
 
 export default function IntegrationPage() {
+  const { t } = useLanguage();
   const [integrations, setIntegrations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
@@ -63,9 +65,9 @@ export default function IntegrationPage() {
 
   // Widget Config State
   const [widgetConfig, setWidgetConfig] = useState({
-    title: 'Chat Support',
+    title: t('Chat Support'),
     color: '#1E90FF',
-    welcomeMessage: 'Halo! Ada yang bisa kami bantu hari ini?'
+    welcomeMessage: t('Halo! Ada yang bisa kami bantu hari ini?')
   });
   const router = useRouter();
 
@@ -209,14 +211,14 @@ export default function IntegrationPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Disconnect integration?')) {
+    if (confirm(t('Disconnect integration?'))) {
       const res = await deleteBot(id);
       if (res.success) fetchIntegrations();
     }
   };
 
   const handleCleanup = async () => {
-    if (confirm('Clean up stuck WhatsApp integrations? This will delete all integrations stuck in "connecting" status for more than 5 minutes.')) {
+    if (confirm(t('Clean up stuck WhatsApp integrations? This will delete all integrations stuck in "connecting" status for more than 5 minutes.'))) {
       try {
         const response = await fetch('/api/whatsapp/cleanup', {
           method: 'DELETE'
@@ -224,14 +226,14 @@ export default function IntegrationPage() {
         const data = await response.json();
 
         if (data.success) {
-          alert(`✓ Cleaned up ${data.deletedCount} stuck integration(s)`);
+          alert(`✓ ${t('Cleaned up')} ${data.deletedCount} ${t('stuck integration(s)')}`);
           fetchIntegrations();
         } else {
-          alert('Failed to cleanup: ' + data.error);
+          alert(t('Failed to cleanup') + ': ' + data.error);
         }
       } catch (error) {
         console.error('Cleanup error:', error);
-        alert('Failed to cleanup integrations');
+        alert(t('Failed to cleanup integrations'));
       }
     }
   };
@@ -248,8 +250,8 @@ export default function IntegrationPage() {
     <div className="max-w-5xl mx-auto w-full space-y-8 px-4 sm:px-6 lg:px-8 pb-20 font-jakarta">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-border pb-6">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">Integrations</h1>
-          <p className="text-muted-foreground text-sm break-words max-w-[280px] sm:max-w-none">Manage your chatbot connections and live channels.</p>
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">{t('Integrations')}</h1>
+          <p className="text-muted-foreground text-sm break-words max-w-[280px] sm:max-w-none">{t('Manage your chatbot connections and live channels.')}</p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
@@ -260,19 +262,19 @@ export default function IntegrationPage() {
             className="w-full sm:w-auto gap-2 h-11 px-4 rounded-xl border-orange-200 text-orange-600 hover:bg-orange-50"
           >
             <RefreshCw className="w-4 h-4 mr-2 sm:mr-0" />
-            <span>Cleanup</span>
+            <span>{t('Cleanup')}</span>
           </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white gap-2 shadow-lg shadow-primary/20 h-11 px-6 font-bold rounded-xl">
                 <Plus className="w-4 h-4" />
-                Add Connection
+                {t('Add Connection')}
                 <ChevronDown className="w-4 h-4 opacity-50" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 p-2 rounded-2xl">
-              <DropdownMenuLabel className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Select Platform</DropdownMenuLabel>
+              <DropdownMenuLabel className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{t('Select Platform')}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {platforms.map((p) => (
                 <DropdownMenuItem
@@ -290,7 +292,7 @@ export default function IntegrationPage() {
       </div>
 
       <div className="space-y-4">
-        <h3 className="text-sm font-bold text-foreground uppercase tracking-wider ml-1">Active Connections</h3>
+        <h3 className="text-sm font-bold text-foreground uppercase tracking-wider ml-1">{t('Active Connections')}</h3>
 
         {isLoading ? (
           <div className="flex justify-center p-20"><Loader2 className="w-10 h-10 animate-spin text-primary" /></div>
@@ -315,13 +317,13 @@ export default function IntegrationPage() {
                             const status = (bot.config as any)?.status || 'Active';
                             const isConnected = status === 'Active' || status === 'Connected';
                             const statusColor = isConnected ? 'bg-emerald-500' : 'bg-gray-300';
-                            const statusText = isConnected ? 'Online' : 'Offline';
+                            const statusText = isConnected ? t('Online') : t('Offline');
 
                             return (
                               <>
                                 <span className={`w-2 h-2 rounded-full shrink-0 ${statusColor} ${isConnected ? 'animate-pulse' : ''}`} />
                                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter truncate block flex-1 min-w-0">
-                                  {platform || 'API'} • {statusText} • Agent: {bot.agent?.name || 'Unassigned'}
+                                  {platform || 'API'} • {statusText} • {t('Agent')}: {bot.agent?.name || 'Unassigned'}
                                 </span>
                               </>
                             );
@@ -342,7 +344,7 @@ export default function IntegrationPage() {
                           className="w-full sm:w-auto h-9 px-4 text-xs font-bold gap-2 border-green-200 text-green-600 hover:bg-green-50 rounded-xl"
                         >
                           <QrCode className="w-3.5 h-3.5" />
-                          Connect
+                          {t('Connect')}
                         </Button>
                       )}
 
@@ -368,9 +370,9 @@ export default function IntegrationPage() {
         ) : (
           <Card className="p-20 border-dashed border-2 text-center bg-gray-50/30 rounded-[2.5rem]">
             <Plug className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-            <p className="text-muted-foreground font-medium italic text-sm">Belum ada bot yang dibuat Bang.</p>
+            <p className="text-muted-foreground font-medium italic text-sm">{t('Belum ada bot yang dibuat Bang.')}</p>
             <Link href="/bot-builder">
-              <Button variant="link" className="text-primary font-bold mt-2 text-base">Pergi ke Bot Builder dulu yuk 🚀</Button>
+              <Button variant="link" className="text-primary font-bold mt-2 text-base">{t('Pergi ke Bot Builder dulu yuk 🚀')}</Button>
             </Link>
           </Card>
         )}
@@ -384,8 +386,8 @@ export default function IntegrationPage() {
                 {selectedPlatform === 'WhatsApp' ? <QrCode className="w-6 h-6" /> : selectedPlatform === 'Website' ? <Globe className="w-6 h-6" /> : <Settings2 className="w-6 h-6" />}
               </div>
               <div>
-                <DialogTitle className="text-xl font-bold">{configStep === 'qr' ? 'Scan QR Code' : configStep === 'success' ? 'Completed' : `Connect ${selectedPlatform}`}</DialogTitle>
-                <DialogDescription className="text-primary/70 text-xs font-medium break-words">Link your chatbot in seconds.</DialogDescription>
+                <DialogTitle className="text-xl font-bold">{configStep === 'qr' ? t('Scan QR Code') : configStep === 'success' ? t('Completed') : `${t('Connect')} ${selectedPlatform}`}</DialogTitle>
+                <DialogDescription className="text-primary/70 text-xs font-medium break-words">{t('Link your chatbot in seconds.')}</DialogDescription>
               </div>
             </div>
           </div>
@@ -397,7 +399,7 @@ export default function IntegrationPage() {
                   /* ====== WIDGET PREVIEW MODE ====== */
                   <div className="space-y-6">
                     <div className="bg-gray-100 p-4 rounded-xl border border-dashed border-gray-300">
-                      <Label className="text-xs font-bold uppercase text-muted-foreground mb-3 block">Live Preview</Label>
+                      <Label className="text-xs font-bold uppercase text-muted-foreground mb-3 block">{t('Live Preview')}</Label>
 
                       {/* PREVIEW CONTAINER */}
                       <div className="bg-white rounded-lg shadow-sm border p-4 relative min-h-[300px] flex flex-col justify-end items-end gap-3 bg-[url('https://transparenttextures.com/patterns/cubes.png')]">
@@ -429,11 +431,11 @@ export default function IntegrationPage() {
 
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label className="text-xs font-bold">Widget Title</Label>
+                        <Label className="text-xs font-bold">{t('Widget Title')}</Label>
                         <Input value={widgetConfig.title} onChange={(e) => setWidgetConfig({ ...widgetConfig, title: e.target.value })} className="h-10 rounded-lg" />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-xs font-bold">Theme Color</Label>
+                        <Label className="text-xs font-bold">{t('Theme Color')}</Label>
                         <div className="flex gap-2">
                           {['#1E90FF', '#ef4444', '#10b981', '#8b5cf6', '#f59e0b'].map((color) => (
                             <div
@@ -446,7 +448,7 @@ export default function IntegrationPage() {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-xs font-bold">Welcome Message</Label>
+                        <Label className="text-xs font-bold">{t('Welcome Message')}</Label>
                         <Input value={widgetConfig.welcomeMessage} onChange={(e) => setWidgetConfig({ ...widgetConfig, welcomeMessage: e.target.value })} className="h-10 rounded-lg" />
                       </div>
                     </div>
@@ -473,24 +475,24 @@ export default function IntegrationPage() {
                       }}
                       className="w-full h-12 bg-primary font-bold text-white rounded-xl shadow-lg shadow-primary/20"
                     >
-                      {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Create Widget & Get Code'}
+                      {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : t('Create Widget & Get Code')}
                     </Button>
                   </div>
                 ) : (
                   /* ====== STANDARD WHATSAPP FLOW ====== */
                   selectedPlatform === 'WhatsApp' ? (
                     <div className="space-y-4">
-                      <Label className="text-xs font-bold uppercase">Select Bot to Connect</Label>
+                      <Label className="text-xs font-bold uppercase">{t('Select Bot to Connect')}</Label>
                       <Select onValueChange={(value) => {
                         console.log('[Select] Bot selected:', value);
                         (window as any).selectedBotIdForConnection = value;
                       }}>
                         <SelectTrigger className="h-12 rounded-xl bg-gray-50">
-                          <SelectValue placeholder="Choose a bot from Builder" />
+                          <SelectValue placeholder={t("Choose a bot from Builder")} />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl border-none shadow-xl">
                           <SelectItem value="none" className="rounded-lg py-2.5 font-bold text-blue-600 italic">
-                            Skip (Broadcast Only / Manual Chat)
+                            {t('Skip (Broadcast Only / Manual Chat)')}
                           </SelectItem>
                           {allBots.filter((b: any) => !b.integrationId).length > 0 ? (
                             allBots.filter((b: any) => !b.integrationId).map((bot: any) => (
@@ -500,9 +502,9 @@ export default function IntegrationPage() {
                             ))
                           ) : (
                             <div className="p-4 text-xs text-center text-muted-foreground italic">
-                              Semua bot kamu sudah terhubung atau belum ada bot.
+                              {t('All your bots are already connected or no bots found.')}
                               <br />
-                              Buat bot baru di Bot Builder dulu ya Bang.
+                              {t('Create a new bot in Bot Builder first.')}
                             </div>
                           )}
                         </SelectContent>
@@ -524,7 +526,7 @@ export default function IntegrationPage() {
                         disabled={isSaving}
                         className="w-full h-12 bg-green-600 hover:bg-green-700 font-bold text-white rounded-xl shadow-lg"
                       >
-                        {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Start Connection & Get QR'}
+                        {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : t('Start Connection & Get QR')}
                       </Button>
 
                       <p className="text-[10px] text-center text-muted-foreground">
@@ -552,13 +554,13 @@ export default function IntegrationPage() {
                 <div className="p-4 bg-white border-2 border-primary/10 rounded-[2.5rem] shadow-xl mb-6 relative group">
                   <img src={qrCodeUrl!} alt="QR" className="w-52 h-52 rounded-2xl" />
                 </div>
-                <h3 className="font-bold text-lg mb-2">Scan with your phone</h3>
+                <h3 className="font-bold text-lg mb-2">{t('Scan with your phone')}</h3>
                 <p className="text-xs text-center text-muted-foreground mb-8 px-4 leading-relaxed">
-                  Open WhatsApp &gt; Settings &gt; Linked Devices to scan this code.
+                  {t('Open WhatsApp > Settings > Linked Devices to scan this code.')}
                 </p>
                 <div className="flex gap-3 w-full">
-                  <Button variant="outline" className="flex-1 h-12 rounded-xl" onClick={() => setConfigStep('input')}>Back</Button>
-                  <Button className="flex-1 h-12 bg-primary text-white font-bold rounded-xl" onClick={() => setConfigStep('success')}>I've Scanned</Button>
+                  <Button variant="outline" className="flex-1 h-12 rounded-xl" onClick={() => setConfigStep('input')}>{t('Back')}</Button>
+                  <Button className="flex-1 h-12 bg-primary text-white font-bold rounded-xl" onClick={() => setConfigStep('success')}>{t("I've Scanned")}</Button>
                 </div>
               </div>
             )}
@@ -568,24 +570,24 @@ export default function IntegrationPage() {
                 <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mb-6">
                   <CheckCircle2 className="w-10 h-10 text-emerald-500" />
                 </div>
-                <h3 className="text-2xl font-bold tracking-tight">Success!</h3>
+                <h3 className="text-2xl font-bold tracking-tight">{t('Success!')}</h3>
                 {selectedPlatform === 'Website' ? (
                   <div className="w-full mt-4 space-y-4">
                     <p className="text-sm text-muted-foreground px-4">Copy this code to your website's <code>&lt;body&gt;</code> tag. Status will turn <b>Active</b> once installed.</p>
                     <div className="bg-gray-900 text-gray-300 p-4 rounded-xl text-xs font-mono text-left break-all relative group">
                       {`<script src="https://cd.nanoartif.com/widget.js?id=wdg_sample_id" defer></script>`}
                       <Button size="sm" variant="secondary" className="absolute top-2 right-2 h-6 text-[10px]" onClick={() => {
-                        alert('Copied! Status updated to Active.');
+                        alert(t('Copied! Status updated to Active.'));
                         // Logic to update bot status to 'Active' would go here
                         fetchIntegrations(); // Refresh list to show potential status change
-                      }}>Copy & Activate</Button>
+                      }}>{t('Copy & Activate')}</Button>
                     </div>
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground mt-2 mb-8 px-4">Simulation successful. Integration entry will show up in your list.</p>
+                  <p className="text-sm text-muted-foreground mt-2 mb-8 px-4">{t('Simulation successful. Integration entry will show up in your list.')}</p>
                 )}
 
-                <Button className="w-full h-12 bg-foreground text-white font-bold rounded-xl shadow-lg mt-6" onClick={() => resetModal(false)}>Finish</Button>
+                <Button className="w-full h-12 bg-foreground text-white font-bold rounded-xl shadow-lg mt-6" onClick={() => resetModal(false)}>{t('Finish')}</Button>
               </div>
             )}
           </div>

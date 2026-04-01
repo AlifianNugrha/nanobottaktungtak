@@ -40,8 +40,10 @@ import {
 } from 'lucide-react';
 import { getPlanStatus } from '@/app/actions/user-actions';
 import { useRouter } from 'next/navigation';
+import { useLanguage } from '@/components/language-provider';
 
 export default function PaymentPage() {
+  const { t } = useLanguage();
   const router = useRouter();
 
   // Check plan status
@@ -105,10 +107,10 @@ export default function PaymentPage() {
           )}
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              {view === 'main' ? 'Payments & Automation' : 'AI Closing Logic'}
+              {view === 'main' ? t('Payments & Automation') : t('AI Closing Logic')}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              {view === 'main' ? 'Kelola integrasi pembayaran dan sistem otomatisasi.' : 'Atur skenario closing otomatis untuk Bot Anda.'}
+              {view === 'main' ? t('Kelola integrasi pembayaran dan sistem otomatisasi.') : t('Atur skenario closing otomatis untuk Bot Anda.')}
             </p>
           </div>
         </div>
@@ -116,8 +118,8 @@ export default function PaymentPage() {
         {view === 'main' && (
           <div className="flex items-center justify-between w-full sm:w-auto gap-3 bg-primary/5 px-4 py-3 sm:py-2 rounded-2xl border border-primary/10">
             <div className="flex flex-col items-start sm:items-end">
-              <span className="text-[10px] font-bold text-primary uppercase">AI Closing Mode</span>
-              <span className="text-xs font-bold">{isAiClosingEnabled ? 'ACTIVE' : 'DISABLED'}</span>
+              <span className="text-[10px] font-bold text-primary uppercase">{t('AI Closing Mode')}</span>
+              <span className="text-xs font-bold">{isAiClosingEnabled ? t('ACTIVE') : t('DISABLED')}</span>
             </div>
             <Switch checked={isAiClosingEnabled} onCheckedChange={setIsAiClosingEnabled} />
           </div>
@@ -134,8 +136,8 @@ export default function PaymentPage() {
                 <Zap className="w-8 h-8 fill-current" />
               </div>
               <div className="flex-1 space-y-2 text-center md:text-left">
-                <h2 className="text-xl font-bold">Smart AI Closing</h2>
-                <p className="text-sm text-muted-foreground max-w-md">Aktifkan deteksi niat beli dan kirim invoice otomatis ke pelanggan.</p>
+                <h2 className="text-xl font-bold">{t('Smart AI Closing')}</h2>
+                <p className="text-sm text-muted-foreground max-w-md">{t('Aktifkan deteksi niat beli dan kirim invoice otomatis ke pelanggan.')}</p>
               </div>
               <Button onClick={() => setView('logic')} className="rounded-xl h-12 px-6 gap-2 font-bold shadow-md hover:scale-[1.02] transition-transform">
                 Setup Bot Logic <ArrowRight className="w-4 h-4" />
@@ -148,7 +150,7 @@ export default function PaymentPage() {
             <div className="lg:col-span-2 space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="font-bold text-lg flex items-center gap-2">
-                  <Wallet className="w-5 h-5 text-primary" /> Connected Gateways
+                  <Wallet className="w-5 h-5 text-primary" /> {t('Connected Gateways')}
                 </h3>
               </div>
 
@@ -157,11 +159,11 @@ export default function PaymentPage() {
                   <div className="px-3 py-1 bg-gray-100 rounded text-[10px] font-black text-gray-500">MIDTRANS</div>
                   <div className={`flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-full border ${midtransKeys.serverKey ? 'text-green-600 bg-green-50 border-green-100' : 'text-orange-600 bg-orange-50 border-orange-100'}`}>
                     {midtransKeys.serverKey ? <Check className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
-                    {midtransKeys.serverKey ? 'CONNECTED' : 'NEEDS SETUP'}
+                    {midtransKeys.serverKey ? t('CONNECTED') : t('NEEDS SETUP')}
                   </div>
                 </div>
-                <h4 className="font-bold text-base">Virtual Account & QRIS</h4>
-                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">Terima dana otomatis tanpa konfirmasi manual.</p>
+                <h4 className="font-bold text-base">{t('Virtual Account & QRIS')}</h4>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{t('Terima dana otomatis tanpa konfirmasi manual.')}</p>
                 <Button onClick={() => setIsConfigOpen(true)} variant="outline" className="w-full mt-6 rounded-xl h-10 text-xs font-bold gap-2 group-hover:bg-primary group-hover:text-white transition-all">
                   <Settings className="w-3.5 h-3.5" /> Configure API Keys
                 </Button>
@@ -174,7 +176,7 @@ export default function PaymentPage() {
                     <ShieldAlert className="w-6 h-6" />
                   </div>
                   <div className="space-y-1">
-                    <h3 className="font-bold text-orange-900">Anti-Fraud Protection Active</h3>
+                    <h3 className="font-bold text-orange-900">{t('Anti-Fraud Protection Active')}</h3>
                     <p className="text-xs text-orange-800/80 leading-relaxed max-w-lg">
                       Sistem memverifikasi pembayaran melalui <strong>Secure Webhooks</strong>. Foto bukti transfer dari user tidak akan mengubah status pesanan secara otomatis.
                     </p>
@@ -186,7 +188,7 @@ export default function PaymentPage() {
             {/* KOLOM KANAN: SETTLEMENTS & COMPLIANCE */}
             <div className="space-y-6">
               <h3 className="font-bold text-lg flex items-center gap-2">
-                <CircleDollarSign className="w-5 h-5 text-primary" /> Settlements
+                <CircleDollarSign className="w-5 h-5 text-primary" /> {t('Settlements')}
               </h3>
               <Card className="p-6 space-y-4 border-border shadow-sm bg-white">
                 {[
@@ -204,14 +206,14 @@ export default function PaymentPage() {
                   </div>
                 ))}
                 <Button variant="ghost" className="w-full text-xs font-bold text-primary h-10">
-                  Full History <ExternalLink className="w-3 h-3 ml-2" />
+                  {t('Full History')} <ExternalLink className="w-3 h-3 ml-2" />
                 </Button>
               </Card>
 
               <Card className="p-6 bg-slate-900 text-white rounded-[2rem] border-none">
                 <div className="flex items-center gap-3 mb-4">
                   <ShieldCheck className="w-5 h-5 text-primary" />
-                  <span className="text-xs font-bold uppercase tracking-widest text-slate-300">Security</span>
+                  <span className="text-xs font-bold uppercase tracking-widest text-slate-300">{t('Security')}</span>
                 </div>
                 <p className="text-[11px] text-slate-400 leading-relaxed">
                   Semua transaksi menggunakan enkripsi SSL 256-bit dan diawasi oleh OJK.
@@ -228,7 +230,7 @@ export default function PaymentPage() {
               <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
                 <Sparkles className="w-6 h-6" />
               </div>
-              <h3 className="font-bold text-lg leading-tight">Smart Logic</h3>
+              <h3 className="font-bold text-lg leading-tight">{t('Smart Logic')}</h3>
               <p className="text-xs text-primary-foreground/80 leading-relaxed">
                 Bot akan menganalisis percakapan. Jika trigger terdeteksi, invoice akan dibuat secara real-time.
               </p>
@@ -240,7 +242,7 @@ export default function PaymentPage() {
               <div className="space-y-6">
                 <div className="space-y-3">
                   <Label className="text-xs font-bold uppercase flex items-center gap-2">
-                    <Target className="w-4 h-4 text-primary" /> Trigger Keywords
+                    <Target className="w-4 h-4 text-primary" /> {t('Trigger Keywords')}
                   </Label>
                   <Input
                     value={logicConfig.triggerKeywords}
@@ -251,7 +253,7 @@ export default function PaymentPage() {
 
                 <div className="space-y-3">
                   <Label className="text-xs font-bold uppercase flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4 text-primary" /> Bot Closing Message
+                    <MessageSquare className="w-4 h-4 text-primary" /> {t('Bot Closing Message')}
                   </Label>
                   <Textarea
                     value={logicConfig.closingScript}
@@ -263,7 +265,7 @@ export default function PaymentPage() {
 
               <div className="flex gap-4 pt-6 border-t border-border">
                 <Button onClick={handleSaveLogic} disabled={isSaving} className="flex-1 h-12 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20">
-                  {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Save Bot Logic'}
+                  {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : t('Save Bot Logic')}
                 </Button>
                 <Button variant="ghost" onClick={() => setView('main')} className="h-12 px-8 font-bold text-muted-foreground">Discard</Button>
               </div>
@@ -277,7 +279,7 @@ export default function PaymentPage() {
         <DialogContent className="sm:max-w-[500px] rounded-[2.5rem] p-8 border-none shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold flex items-center gap-3">
-              <Key className="w-6 h-6 text-primary" /> Midtrans Keys
+              <Key className="w-6 h-6 text-primary" /> {t('Midtrans Keys')}
             </DialogTitle>
             <DialogDescription className="text-xs pt-2">
               Masukkan kredensial dari dashboard Midtrans Anda.
@@ -287,7 +289,7 @@ export default function PaymentPage() {
           <div className="space-y-5 py-4">
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-border">
               <div className="space-y-0.5">
-                <Label className="text-xs font-bold uppercase">Production Mode</Label>
+                <Label className="text-xs font-bold uppercase">{t('Production Mode')}</Label>
                 <p className="text-[10px] text-muted-foreground">Aktifkan untuk uang beneran.</p>
               </div>
               <Switch
@@ -298,7 +300,7 @@ export default function PaymentPage() {
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase ml-1">Merchant ID</Label>
+                <Label className="text-[10px] font-bold uppercase ml-1">{t('Merchant ID')}</Label>
                 <Input value={midtransKeys.merchantId} onChange={(e) => setMidtransKeys({ ...midtransKeys, merchantId: e.target.value })} className="rounded-xl h-11 bg-gray-50" />
               </div>
               <div className="space-y-2">
@@ -320,7 +322,7 @@ export default function PaymentPage() {
 
           <DialogFooter className="sm:justify-start gap-3">
             <Button onClick={() => setIsConfigOpen(false)} className="flex-1 bg-primary text-white font-bold h-12 rounded-xl shadow-lg shadow-primary/20">
-              Save & Connect
+              {t('Save & Connect')}
             </Button>
           </DialogFooter>
         </DialogContent>

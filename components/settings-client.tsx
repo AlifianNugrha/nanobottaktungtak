@@ -37,7 +37,7 @@ export function SettingsClient({ userName, userEmail, companyName, isPro, userIm
     const [isSaving, setIsSaving] = useState(false);
     const router = useRouter();
     const { theme, setTheme } = useTheme();
-    const { language, setLanguage } = useLanguage();
+    const { language, setLanguage, t } = useLanguage();
     const [mounted, setMounted] = useState(false);
 
     // Password State
@@ -146,15 +146,15 @@ export function SettingsClient({ userName, userEmail, companyName, isPro, userIm
     };
 
     if (!mounted) {
-        return <div className="p-8">Loading settings...</div>;
+        return <div className="p-8">{t('Loading settings...')}</div>;
     }
 
     return (
         <div className="space-y-8 max-w-3xl animate-in fade-in duration-500">
             <div>
-                <h1 className="text-3xl font-bold text-foreground">Settings</h1>
+                <h1 className="text-3xl font-bold text-foreground">{t('Settings')}</h1>
                 <p className="text-muted-foreground mt-2">
-                    Manage your account and preferences.
+                    {t('Manage your account and preferences.')}
                 </p>
             </div>
 
@@ -162,11 +162,11 @@ export function SettingsClient({ userName, userEmail, companyName, isPro, userIm
             <Card className="bg-card border-border">
                 <div className="p-6 border-b border-border flex justify-between items-center">
                     <h2 className="text-xl font-semibold text-foreground">
-                        Profile Information
+                        {t('Profile Information')}
                     </h2>
                     {isPro && (
                         <div className="bg-[#1E90FF] text-white text-[10px] font-black px-2 py-1 rounded-full uppercase flex items-center gap-1 shadow-lg shadow-[#1E90FF]/20">
-                            <Crown className="w-3 h-3" /> User Pro
+                            <Crown className="w-3 h-3" /> {t('User Pro')}
                         </div>
                     )}
                 </div>
@@ -190,21 +190,21 @@ export function SettingsClient({ userName, userEmail, companyName, isPro, userIm
                             <button
                                 onClick={() => fileInputRef.current?.click()}
                                 className="absolute -bottom-1 -right-1 bg-primary text-white p-1.5 rounded-full shadow-lg hover:scale-110 transition-transform"
-                                title="Change photo"
+                                title={t("Change Photo")}
                             >
                                 <Upload className="w-3.5 h-3.5" />
                             </button>
                         </div>
                         <div className="space-y-1 text-center md:text-left">
-                            <p className="font-bold text-sm">Profile Picture</p>
-                            <p className="text-xs text-muted-foreground">Upload a new photo. Recommended size 400x400px.</p>
+                            <p className="font-bold text-sm">{t('Profile Picture')}</p>
+                            <p className="text-xs text-muted-foreground">{t('Upload a new photo. Recommended size 400x400px.')}</p>
                             <div className="flex gap-2 mt-2">
                                 <Button size="sm" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="text-[10px] h-7 px-3 rounded-lg">
-                                    Change Photo
+                                    {t('Change Photo')}
                                 </Button>
                                 {formData.image && (
                                     <Button size="sm" variant="ghost" onClick={() => setFormData({ ...formData, image: '' })} className="text-[10px] h-7 px-3 rounded-lg text-red-500 hover:text-red-600 hover:bg-red-50">
-                                        Remove
+                                        {t('Remove')}
                                     </Button>
                                 )}
                             </div>
@@ -214,7 +214,7 @@ export function SettingsClient({ userName, userEmail, companyName, isPro, userIm
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                            <Label className="text-foreground">Full Name</Label>
+                            <Label className="text-foreground">{t('Full Name')}</Label>
                             <Input
                                 value={formData.name}
                                 onChange={(e) =>
@@ -225,19 +225,19 @@ export function SettingsClient({ userName, userEmail, companyName, isPro, userIm
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-foreground">Email Address</Label>
+                            <Label className="text-foreground">{t('Email Address')}</Label>
                             <Input
                                 type="email"
                                 value={formData.email}
                                 disabled
                                 className="bg-secondary border-border text-foreground placeholder:text-muted-foreground opacity-70 cursor-not-allowed"
                             />
-                            <p className="text-[10px] text-muted-foreground">Email cannot be changed directly.</p>
+                            <p className="text-[10px] text-muted-foreground">{t('Email cannot be changed directly.')}</p>
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <Label className="text-foreground">Company Name</Label>
+                        <Label className="text-foreground">{t('Company Name')}</Label>
                         <Input
                             value={formData.companyName}
                             onChange={(e) =>
@@ -255,14 +255,14 @@ export function SettingsClient({ userName, userEmail, companyName, isPro, userIm
                         className="bg-[#1E90FF] hover:bg-[#187bcd] text-white gap-2 font-bold rounded-xl shadow-lg shadow-[#1E90FF]/20"
                     >
                         {isSaving ? (
-                            'Saving...'
+                            t('Saving...')
                         ) : saved ? (
                             <>
                                 <Check className="w-4 h-4" />
-                                Saved Changes
+                                {t('Saved Changes')}
                             </>
                         ) : (
-                            'Save Profile'
+                            t('Save Profile')
                         )}
                     </Button>
                 </div>
@@ -271,12 +271,12 @@ export function SettingsClient({ userName, userEmail, companyName, isPro, userIm
             {/* Security Settings */}
             <Card className="bg-card border-border">
                 <div className="p-6 border-b border-border">
-                    <h2 className="text-xl font-semibold text-foreground">Security & Password</h2>
+                    <h2 className="text-xl font-semibold text-foreground">{t('Security & Password')}</h2>
                 </div>
 
                 <div className="p-6 space-y-4">
                     <div className="py-3">
-                        <p className="text-foreground font-medium mb-2">Password</p>
+                        <p className="text-foreground font-medium mb-2">{t('Password')}</p>
                         <div className="flex items-center gap-4 mb-4">
                             <Input
                                 type="password"
@@ -286,7 +286,7 @@ export function SettingsClient({ userName, userEmail, companyName, isPro, userIm
                             />
                         </div>
                         <p className="text-sm text-muted-foreground mb-4">
-                            For security reasons, your current password is hidden. You can change it below.
+                            {t('For security reasons, your current password is hidden. You can change it below.')}
                         </p>
 
                         <Dialog open={isPassOpen} onOpenChange={setIsPassOpen}>
@@ -295,19 +295,19 @@ export function SettingsClient({ userName, userEmail, companyName, isPro, userIm
                                     variant="outline"
                                     className="border-border text-foreground hover:bg-secondary bg-transparent rounded-xl font-bold"
                                 >
-                                    Change Password
+                                    {t('Change Password')}
                                 </Button>
                             </DialogTrigger>
                             <DialogContent className="sm:max-w-md">
                                 <DialogHeader>
-                                    <DialogTitle>Change Password</DialogTitle>
+                                    <DialogTitle>{t('Change Password')}</DialogTitle>
                                     <DialogDescription>
-                                        Enter your new password below.
+                                        {t('Enter your new password below.')}
                                     </DialogDescription>
                                 </DialogHeader>
                                 <div className="space-y-4 py-4">
                                     <div className="space-y-2">
-                                        <Label htmlFor="new-pass">New Password</Label>
+                                        <Label htmlFor="new-pass">{t('New Password')}</Label>
                                         <Input
                                             id="new-pass"
                                             type="password"
@@ -316,7 +316,7 @@ export function SettingsClient({ userName, userEmail, companyName, isPro, userIm
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="confirm-pass">Confirm Password</Label>
+                                        <Label htmlFor="confirm-pass">{t('Confirm Password')}</Label>
                                         <Input
                                             id="confirm-pass"
                                             type="password"
@@ -327,10 +327,10 @@ export function SettingsClient({ userName, userEmail, companyName, isPro, userIm
                                 </div>
                                 <DialogFooter>
                                     <Button type="button" variant="secondary" onClick={() => setIsPassOpen(false)}>
-                                        Cancel
+                                        {t('Cancel')}
                                     </Button>
                                     <Button type="button" onClick={handleChangePassword} disabled={isChangingPass}>
-                                        {isChangingPass ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Update Password'}
+                                        {isChangingPass ? <Loader2 className="w-4 h-4 animate-spin" /> : t('Update Password')}
                                     </Button>
                                 </DialogFooter>
                             </DialogContent>
@@ -341,17 +341,17 @@ export function SettingsClient({ userName, userEmail, companyName, isPro, userIm
 
                     <div className="py-3">
                         <p className="text-foreground font-medium mb-2">
-                            Two-Factor Authentication
+                            {t('Two-Factor Authentication')}
                         </p>
                         <p className="text-sm text-muted-foreground mb-4">
-                            Add an extra layer of security to your account.
+                            {t('Add an extra layer of security to your account.')}
                         </p>
                         <Button
                             variant="outline"
                             className="border-border text-foreground hover:bg-secondary bg-transparent rounded-xl font-bold"
                             disabled
                         >
-                            Enable 2FA (Coming Soon)
+                            {t('Enable 2FA (Coming Soon)')}
                         </Button>
                     </div>
                 </div>
@@ -361,14 +361,14 @@ export function SettingsClient({ userName, userEmail, companyName, isPro, userIm
             <Card className="bg-card border-border">
                 <div className="p-6 border-b border-border">
                     <h2 className="text-xl font-semibold text-foreground">
-                        Preferences
+                        {t('Preferences')}
                     </h2>
                 </div>
 
                 <div className="p-6 space-y-6">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label className="text-foreground">Timezone</Label>
+                            <Label className="text-foreground">{t('Timezone')}</Label>
                             <Select value={formData.timezone} onValueChange={(val) => setFormData({ ...formData, timezone: val })}>
                                 <SelectTrigger className="bg-secondary border-border text-foreground">
                                     <SelectValue />
@@ -381,29 +381,29 @@ export function SettingsClient({ userName, userEmail, companyName, isPro, userIm
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-foreground">Language</Label>
+                            <Label className="text-foreground">{t('Language')}</Label>
                             <Select value={language} onValueChange={(val: any) => setLanguage(val)}>
                                 <SelectTrigger className="bg-secondary border-border text-foreground">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent className="bg-secondary border-border">
-                                    <SelectItem value="en">English</SelectItem>
-                                    <SelectItem value="id">Indonesian</SelectItem>
+                                    <SelectItem value="en">{t('English')}</SelectItem>
+                                    <SelectItem value="id">{t('Indonesian')}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <Label className="text-foreground">Theme</Label>
+                        <Label className="text-foreground">{t('Theme')}</Label>
                         <Select value={theme} onValueChange={(val) => setTheme(val)}>
                             <SelectTrigger className="bg-secondary border-border text-foreground">
-                                <SelectValue placeholder="Select theme" />
+                                <SelectValue placeholder={t("Select theme")} />
                             </SelectTrigger>
                             <SelectContent className="bg-secondary border-border">
-                                <SelectItem value="light">Light</SelectItem>
-                                <SelectItem value="dark">Dark</SelectItem>
-                                <SelectItem value="system">System</SelectItem>
+                                <SelectItem value="light">{t('Light')}</SelectItem>
+                                <SelectItem value="dark">{t('Dark')}</SelectItem>
+                                <SelectItem value="system">{t('System')}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -413,14 +413,14 @@ export function SettingsClient({ userName, userEmail, companyName, isPro, userIm
             {/* Danger Zone */}
             <Card className="bg-card border-border border-red-500/20">
                 <div className="p-6 border-b border-red-500/20">
-                    <h2 className="text-xl font-semibold text-red-500">Danger Zone</h2>
+                    <h2 className="text-xl font-semibold text-red-500">{t('Danger Zone')}</h2>
                 </div>
 
                 <div className="p-6">
                     <div className="py-3">
-                        <p className="text-foreground font-medium mb-2">Delete Account</p>
+                        <p className="text-foreground font-medium mb-2">{t('Delete Account')}</p>
                         <p className="text-sm text-muted-foreground mb-4">
-                            Permanently delete your account and all associated data.
+                            {t('Permanently delete your account and all associated data.')}
                         </p>
 
                         <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
@@ -429,21 +429,21 @@ export function SettingsClient({ userName, userEmail, companyName, isPro, userIm
                                     variant="outline"
                                     className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white bg-transparent rounded-xl font-bold transition-all"
                                 >
-                                    Delete Account
+                                    {t('Delete Account')}
                                 </Button>
                             </DialogTrigger>
                             <DialogContent className="sm:max-w-md border-red-500/50">
                                 <DialogHeader>
                                     <DialogTitle className="text-red-500 flex items-center gap-2">
                                         <AlertTriangle className="w-5 h-5" />
-                                        Delete Account
+                                        {t('Delete Account')}
                                     </DialogTitle>
                                     <DialogDescription>
-                                        This action cannot be undone. This will permanently delete your account and remove your data from our servers.
+                                        {t('This action cannot be undone. This will permanently delete your account and remove your data from our servers.')}
                                     </DialogDescription>
                                 </DialogHeader>
                                 <div className="py-4 space-y-2">
-                                    <Label className="text-xs">Type <span className="font-bold">DELETE</span> to confirm</Label>
+                                    <Label className="text-xs">{t('Type')} <span className="font-bold">DELETE</span> {t('to confirm')}</Label>
                                     <Input
                                         value={deleteConfirmText}
                                         onChange={(e) => setDeleteConfirmText(e.target.value)}
@@ -453,7 +453,7 @@ export function SettingsClient({ userName, userEmail, companyName, isPro, userIm
                                 </div>
                                 <DialogFooter>
                                     <Button type="button" variant="secondary" onClick={() => setIsDeleteOpen(false)}>
-                                        Cancel
+                                        {t('Cancel')}
                                     </Button>
                                     <Button
                                         type="button"
@@ -461,7 +461,7 @@ export function SettingsClient({ userName, userEmail, companyName, isPro, userIm
                                         onClick={handleDeleteAccount}
                                         disabled={isDeleting || deleteConfirmText !== 'DELETE'}
                                     >
-                                        {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm Delete'}
+                                        {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : t('Confirm Delete')}
                                     </Button>
                                 </DialogFooter>
                             </DialogContent>

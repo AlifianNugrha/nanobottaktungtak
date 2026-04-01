@@ -28,8 +28,10 @@ import {
 } from "@/components/ui/select";
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from '@/app/actions/customer-actions';
 import { format } from 'date-fns';
+import { useLanguage } from '@/components/language-provider';
 
 export default function CustomerPage() {
+  const { t } = useLanguage();
   const [view, setView] = useState<'list' | 'add' | 'edit'>('list');
   const [customers, setCustomers] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -63,7 +65,7 @@ export default function CustomerPage() {
 
   // --- LOGIKA ---
   const handleSave = async () => {
-    if (!formData.name) return alert("Nama wajib diisi!");
+    if (!formData.name) return alert(t("Name is required!"));
     setIsSaving(true);
 
     let res;
@@ -79,17 +81,17 @@ export default function CustomerPage() {
       setView('list');
       loadCustomers(); // Reload data
     } else {
-      alert("Gagal menyimpan: " + res.error);
+      alert(t("Failed to save: ") + res.error);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Hapus data pelanggan ini?')) {
+    if (confirm(t('Delete this customer data?'))) {
       const res = await deleteCustomer(id);
       if (res.success) {
         loadCustomers();
       } else {
-        alert("Gagal menghapus");
+        alert(t("Failed to delete"));
       }
     }
   };
@@ -112,17 +114,17 @@ export default function CustomerPage() {
           )}
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
-              {view === 'list' ? 'Customers' : view === 'edit' ? 'Edit Profile' : 'New Customer'}
+              {view === 'list' ? t('Customers') : view === 'edit' ? t('Edit Profile') : t('New Customer')}
             </h1>
             <p className="text-muted-foreground text-sm">
-              {view === 'list' ? 'Kelola database dan interaksi pelanggan Anda.' : 'Tambahkan informasi detail pelanggan baru.'}
+              {view === 'list' ? t('Manage your customer database and interactions.') : t('Add new customer detail information.')}
             </p>
           </div>
         </div>
 
         {view === 'list' && (
           <Button onClick={() => { setFormData({ id: '', name: '', email: '', phone: '', status: 'Lead' }); setView('add'); }} className="w-full sm:w-auto bg-[#1E90FF] hover:bg-[#187bcd] text-white gap-2 h-11 px-6 font-bold shadow-lg shadow-[#1E90FF]/20 rounded-xl">
-            <UserPlus className="w-4 h-4" /> Add Customer
+            <UserPlus className="w-4 h-4" /> {t('Add Customer')}
           </Button>
         )}
       </div>
@@ -137,7 +139,7 @@ export default function CustomerPage() {
                 <Users className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-xs font-bold text-muted-foreground uppercase">Total Customers</p>
+                <p className="text-xs font-bold text-muted-foreground uppercase">{t('Total Customers')}</p>
                 <p className="text-2xl font-bold">{customers.length}</p>
               </div>
             </Card>
@@ -146,7 +148,7 @@ export default function CustomerPage() {
                 <Check className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-xs font-bold text-muted-foreground uppercase">Active Leads</p>
+                <p className="text-xs font-bold text-muted-foreground uppercase">{t('Active Leads')}</p>
                 <p className="text-2xl font-bold">{customers.filter(c => c.status === 'Active').length}</p>
               </div>
             </Card>
@@ -156,7 +158,7 @@ export default function CustomerPage() {
           <div className="relative w-full max-w-full sm:max-w-md">
             <Search className="absolute left-3 top-3.5 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Cari nama atau email..."
+              placeholder={t("Search by name or email...")}
               className="pl-10 h-11 rounded-xl bg-white border-border"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -172,17 +174,17 @@ export default function CustomerPage() {
             ) : filteredCustomers.length === 0 ? (
               <div className="flex flex-col justify-center items-center h-full py-20 text-muted-foreground">
                 <Users className="w-10 h-10 mb-2 opacity-20" />
-                <p>Belum ada data pelanggan.</p>
+                <p>{t('No customer data yet.')}</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead className="bg-gray-50 border-b border-border">
                     <tr>
-                      <th className="px-6 py-4 text-[10px] font-bold uppercase text-muted-foreground">Customer</th>
-                      <th className="px-6 py-4 text-[10px] font-bold uppercase text-muted-foreground">Contact</th>
-                      <th className="px-6 py-4 text-[10px] font-bold uppercase text-muted-foreground">Status</th>
-                      <th className="px-6 py-4 text-[10px] font-bold uppercase text-muted-foreground">Joined Date</th>
+                      <th className="px-6 py-4 text-[10px] font-bold uppercase text-muted-foreground">{t('Customer')}</th>
+                      <th className="px-6 py-4 text-[10px] font-bold uppercase text-muted-foreground">{t('Contact')}</th>
+                      <th className="px-6 py-4 text-[10px] font-bold uppercase text-muted-foreground">{t('Status')}</th>
+                      <th className="px-6 py-4 text-[10px] font-bold uppercase text-muted-foreground">{t('Joined Date')}</th>
                       <th className="px-6 py-4 text-right"></th>
                     </tr>
                   </thead>
@@ -211,7 +213,7 @@ export default function CustomerPage() {
                           <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${c.status === 'Active' ? 'bg-green-100 text-green-700' :
                             c.status === 'Lead' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
                             }`}>
-                            {c.status}
+                            {c.status === 'Active' ? t('Active (Customer)') : c.status === 'Lead' ? t('Lead (Prospect)') : t('Inactive')}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-xs text-muted-foreground font-medium">
@@ -241,7 +243,7 @@ export default function CustomerPage() {
           <Card className="p-8 space-y-6 shadow-sm border-border">
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase">Full Name</Label>
+                <Label className="text-xs font-bold uppercase">{t('Full Name')}</Label>
                 <Input
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -251,7 +253,7 @@ export default function CustomerPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase">Email Address</Label>
+                  <Label className="text-xs font-bold uppercase">{t('Email Address')}</Label>
                   <Input
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -259,7 +261,7 @@ export default function CustomerPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase">Phone Number</Label>
+                  <Label className="text-xs font-bold uppercase">{t('Phone Number')}</Label>
                   <Input
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -268,13 +270,13 @@ export default function CustomerPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase">Customer Status</Label>
+                <Label className="text-xs font-bold uppercase">{t('Customer Status')}</Label>
                 <Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v })}>
                   <SelectTrigger className="h-11 rounded-xl bg-gray-50"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Lead">Lead (Prospect)</SelectItem>
-                    <SelectItem value="Active">Active (Customer)</SelectItem>
-                    <SelectItem value="Inactive">Inactive</SelectItem>
+                    <SelectItem value="Lead">{t('Lead (Prospect)')}</SelectItem>
+                    <SelectItem value="Active">{t('Active (Customer)')}</SelectItem>
+                    <SelectItem value="Inactive">{t('Inactive')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -282,9 +284,9 @@ export default function CustomerPage() {
 
             <div className="flex gap-4 pt-4 border-t border-border">
               <Button onClick={handleSave} disabled={isSaving} className="flex-1 h-12 bg-[#1E90FF] hover:bg-[#187bcd] text-white font-bold rounded-xl shadow-lg shadow-[#1E90FF]/20">
-                {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : view === 'edit' ? 'Update Profile' : 'Add to Database'}
+                {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : view === 'edit' ? t('Update Profile') : t('Add to Database')}
               </Button>
-              <Button variant="ghost" onClick={() => setView('list')} className="h-12 px-8 font-bold text-muted-foreground">Cancel</Button>
+              <Button variant="ghost" onClick={() => setView('list')} className="h-12 px-8 font-bold text-muted-foreground">{t('Cancel')}</Button>
             </div>
           </Card>
         </div>

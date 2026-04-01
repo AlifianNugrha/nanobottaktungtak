@@ -40,8 +40,10 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { getAgents, createAgent, updateAgent, deleteAgent } from '@/app/actions/agent-actions';
 import { getProducts } from '@/app/actions/product-actions';
+import { useLanguage } from '@/components/language-provider';
 
 export default function AgentPage() {
+  const { t } = useLanguage();
   const [view, setView] = useState<'list' | 'add' | 'edit'>('list');
   const [agents, setAgents] = useState<any[]>([]);
   const [limit, setLimit] = useState(99);
@@ -124,7 +126,7 @@ export default function AgentPage() {
   };
 
   const handleSave = async () => {
-    if (!formData.name) return alert("Nama Agent wajib diisi!");
+    if (!formData.name) return alert(t("Agent Name is required!"));
     setIsSaving(true);
 
     const fData = new FormData();
@@ -145,18 +147,18 @@ export default function AgentPage() {
       fetchAgents();
       setView('list');
     } else {
-      alert(res.error || "Gagal menyimpan agent");
+      alert(t(res.error || "Failed to save agent"));
     }
     setIsSaving(false);
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Yakin ingin menghapus agent ini?')) {
+    if (confirm(t('Are you sure you want to delete this agent?'))) {
       const res = await deleteAgent(id);
       if (res.success) {
         fetchAgents();
       } else {
-        alert(res.error || "Gagal menghapus agent");
+        alert(t(res.error || "Failed to delete agent"));
       }
     }
   };
@@ -238,23 +240,23 @@ export default function AgentPage() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-3xl font-bold tracking-tight">
-                {view === 'list' ? 'AI Agents' : view === 'edit' ? 'Edit Agent' : 'Create Agent'}
+                {view === 'list' ? t('AI Agents') : view === 'edit' ? t('Edit Agent') : t('Create Agent')}
               </h1>
               {view === 'list' && (
                 <>
                   <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${agents.length >= limit ? 'bg-red-50 text-red-600 border-red-200' : 'bg-green-50 text-green-600 border-green-200'}`}>
-                    {agents.length} / {limit > 900 ? '∞' : limit} Used
+                    {agents.length} / {limit > 900 ? '∞' : limit} {t('Used')}
                   </span>
                   {agents.length >= limit && (
                     <Link href="/dashboard/upgrade" className="ml-2 text-[10px] font-black text-[#1E90FF] uppercase tracking-wider hover:underline flex items-center gap-1 animate-pulse">
-                      Upgrade to Pro <Sparkles className="w-3 h-3" />
+                      {t('Upgrade to Pro')} <Sparkles className="w-3 h-3" />
                     </Link>
                   )}
                 </>
               )}
             </div>
             <p className="text-muted-foreground text-sm mt-1 break-words max-w-[280px] sm:max-w-none">
-              {view === 'list' ? 'Manage your AI assistants.' : 'Configure identity, knowledge, and products.'}
+              {view === 'list' ? t('Manage your AI assistants.') : t('Configure identity, knowledge, and products.')}
             </p>
           </div>
         </div>
@@ -265,7 +267,7 @@ export default function AgentPage() {
             disabled={agents.length >= limit}
             className={`w-full sm:w-auto text-white gap-2 h-11 px-6 font-bold shadow-lg rounded-xl transition-all ${agents.length >= limit ? 'bg-gray-300 cursor-not-allowed text-gray-500 shadow-none' : 'bg-[#1E90FF] hover:bg-[#187bcd] shadow-[#1E90FF]/20'}`}
           >
-            {agents.length >= limit ? 'Limit Reached' : <><Plus className="w-4 h-4" /> Create Agent</>}
+            {agents.length >= limit ? t('Limit Reached') : <><Plus className="w-4 h-4" /> {t('Create Agent')}</>}
           </Button>
         )}
       </div>
@@ -290,22 +292,22 @@ export default function AgentPage() {
                 <h3 className="font-bold text-lg">{agent.name}</h3>
                 <div className="flex gap-2">
                   <span className="text-[10px] font-bold bg-gray-100 text-muted-foreground px-2 py-0.5 rounded uppercase">{(agent.config as any)?.model === 'llama-3.3-70b-versatile' ? 'Llama 3.3' : (agent.config as any)?.model || 'Llama 3.3'}</span>
-                  <span className="text-[10px] font-bold bg-[#1E90FF]/10 text-[#1E90FF] px-2 py-0.5 rounded uppercase">Active</span>
+                  <span className="text-[10px] font-bold bg-[#1E90FF]/10 text-[#1E90FF] px-2 py-0.5 rounded uppercase">{t('Active')}</span>
                 </div>
               </div>
               <div className="mt-6 pt-6 border-t border-border grid grid-cols-2 gap-3">
                 <Button onClick={() => { setActiveTestAgent(agent); setIsTesting(true); setTestMessages([]); }} className="bg-[#1E90FF] text-white font-bold text-xs gap-2 rounded-xl h-10 shadow-sm">
-                  <Play className="w-3 h-3 fill-current" /> Test
+                  <Play className="w-3 h-3 fill-current" /> {t('Test')}
                 </Button>
                 <Button onClick={() => openEditMode(agent)} variant="outline" className="text-xs font-bold rounded-xl h-10 border-border hover:bg-gray-50 gap-2">
-                  <Settings2 className="w-3.5 h-3.5" /> Settings
+                  <Settings2 className="w-3.5 h-3.5" /> {t('Settings')}
                 </Button>
               </div>
             </Card>
           )) : (
             <div className="col-span-full py-20 text-center">
               <Bot className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
-              <p className="text-muted-foreground">No agents found. Create your first agent!</p>
+              <p className="text-muted-foreground">{t('No agents found. Create your first agent!')}</p>
             </div>
           )}
         </div>
@@ -314,7 +316,7 @@ export default function AgentPage() {
           <div className="space-y-6">
             <Card className="p-6 space-y-4 border-l-4 border-l-[#1E90FF] shadow-sm">
               <div className="flex items-center justify-between">
-                <Label className="text-[10px] font-bold uppercase text-muted-foreground">Knowledge Base</Label>
+                <Label className="text-[10px] font-bold uppercase text-muted-foreground">{t('Knowledge Base')}</Label>
                 <Database className="w-4 h-4 text-[#1E90FF]" />
               </div>
               <div className="space-y-2">
@@ -332,7 +334,7 @@ export default function AgentPage() {
                     }} />
                   </div>
                 )) : (
-                  <p className="text-xs text-muted-foreground bg-gray-50 p-4 rounded-xl text-center italic">No documents uploaded.</p>
+                  <p className="text-xs text-muted-foreground bg-gray-50 p-4 rounded-xl text-center italic">{t('No documents uploaded.')}</p>
                 )}
               </div>
               <div className="relative">
@@ -347,7 +349,7 @@ export default function AgentPage() {
                     const data = new FormData();
                     data.append('file', file);
                     const btn = document.getElementById('btn-upload-text');
-                    if (btn) btn.innerText = 'Uploading...';
+                    if (btn) btn.innerText = t('Uploading...');
 
                     try {
                       const res = await fetch('/api/knowledge/upload', { method: 'POST', body: data });
@@ -355,13 +357,13 @@ export default function AgentPage() {
                       if (result.success) {
                         setFormData(prev => ({ ...prev, knowledge: [...prev.knowledge, result.file] }));
                       } else {
-                        alert('Upload failed');
+                        alert(t('Upload failed'));
                       }
                     } catch (err) {
                       console.error(err);
-                      alert('Upload error');
+                      alert(t('Upload error'));
                     } finally {
-                      if (btn) btn.innerText = '+ Add Knowledge File';
+                      if (btn) btn.innerText = t('+ Add Knowledge File');
                       e.target.value = '';
                     }
                   }}
@@ -371,7 +373,7 @@ export default function AgentPage() {
                   className="w-full border-dashed h-10 text-xs font-bold font-jakarta"
                   onClick={() => document.getElementById('knowledge-upload')?.click()}
                 >
-                  <span id="btn-upload-text">+ Add Knowledge File</span>
+                  <span id="btn-upload-text">{t('+ Add Knowledge File')}</span>
                 </Button>
               </div>
             </Card>
@@ -381,7 +383,7 @@ export default function AgentPage() {
             <Card className="p-8 space-y-6 shadow-sm">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase">Agent Name</Label>
+                  <Label className="text-xs font-bold uppercase">{t('Agent Name')}</Label>
                   <Input
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -389,7 +391,7 @@ export default function AgentPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase">Model Engine</Label>
+                  <Label className="text-xs font-bold uppercase">{t('Model Engine')}</Label>
                   <Select value={formData.model} onValueChange={(v) => setFormData({ ...formData, model: v })}>
                     <SelectTrigger className="h-11 rounded-xl bg-gray-50 font-jakarta"><SelectValue /></SelectTrigger>
                     <SelectContent className="font-jakarta">
@@ -408,11 +410,11 @@ export default function AgentPage() {
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label className="text-xs font-bold uppercase">Agent Products</Label>
-                      <p className="text-[10px] text-muted-foreground">Select products this agent can recommend.</p>
+                      <Label className="text-xs font-bold uppercase">{t('Agent Products')}</Label>
+                      <p className="text-[10px] text-muted-foreground">{t('Select products this agent can recommend.')}</p>
                     </div>
                     <Button onClick={openImportModal} size="sm" className="h-8 text-xs gap-2 font-bold bg-[#1E90FF] text-white hover:bg-[#187bcd] shadow-sm shadow-[#1E90FF]/20 rounded-lg">
-                      <Database className="w-3.5 h-3.5" /> Select from Catalog
+                      <Database className="w-3.5 h-3.5" /> {t('Select from Catalog')}
                     </Button>
                   </div>
                 </div>
@@ -421,19 +423,19 @@ export default function AgentPage() {
                     const el = document.getElementById('manual-product-form');
                     if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
                   }}>
-                    <Label className="text-[10px] font-bold uppercase text-muted-foreground hover:text-[#1E90FF] transition-colors">Or Add Manual Item (Optional)</Label>
+                    <Label className="text-[10px] font-bold uppercase text-muted-foreground hover:text-[#1E90FF] transition-colors">{t('Or Add Manual Item (Optional)')}</Label>
                     <Plus className="w-3 h-3 text-muted-foreground" />
                   </div>
                   <div id="manual-product-form" style={{ display: 'none' }} className="space-y-3 pt-2 border-t border-dashed border-gray-200">
                     <div className="grid grid-cols-2 gap-3">
                       <Input
-                        placeholder="Product Name"
+                        placeholder={t("Manual Product Name")}
                         className="bg-white"
                         value={productInput.name}
                         onChange={(e) => setProductInput({ ...productInput, name: e.target.value })}
                       />
                       <Input
-                        placeholder="Price (e.g. Rp 50.000)"
+                        placeholder={t("Price (e.g. Rp 50.000)")}
                         className="bg-white"
                         value={productInput.price}
                         onChange={(e) => setProductInput({ ...productInput, price: e.target.value })}
@@ -447,7 +449,7 @@ export default function AgentPage() {
                     />
                     <div className="flex gap-2">
                       <Input
-                        placeholder="Short Description"
+                        placeholder={t("Short Description")}
                         className="bg-white flex-1"
                         value={productInput.description}
                         onChange={(e) => setProductInput({ ...productInput, description: e.target.value })}
@@ -480,7 +482,7 @@ export default function AgentPage() {
                         )}
                         <div className="flex-1 min-w-0 pr-16">
                           <h4 className="font-bold text-sm truncate">{isObj ? p.name : p}</h4>
-                          <p className="text-xs text-muted-foreground line-clamp-2">{isObj ? p.description : 'No description'}</p>
+                          <p className="text-xs text-muted-foreground line-clamp-2">{isObj ? p.description : t('No description')}</p>
                           {isObj && p.price && <p className="text-[10px] font-bold text-[#1E90FF] mt-0.5">{p.price}</p>}
                         </div>
                         <div className="absolute top-2 right-2 flex gap-1 bg-white/80 backdrop-blur-sm rounded-lg pl-1">
@@ -505,13 +507,13 @@ export default function AgentPage() {
                     );
                   })}
                   {formData.products.length === 0 && (
-                    <p className="text-center text-xs text-muted-foreground py-4 italic">No products added yet.</p>
+                    <p className="text-center text-xs text-muted-foreground py-4 italic">{t('No products added yet.')}</p>
                   )}
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase">Peran & Gaya Bicara (Role & Tone)</Label>
+                <Label className="text-xs font-bold uppercase">{t('Peran & Gaya Bicara (Role & Tone)')}</Label>
                 <Select onValueChange={(val) => {
                   const templates: Record<string, string> = {
                     'cs_ramah': `Nama Bot: CS Ramah
@@ -524,7 +526,7 @@ ATURAN GAYA BAHASA (PENTING!):
 1. Panggil pengguna dengan sebutan "Kak" / "Bapak" / "Ibu".
 2. Jangan kaku. Gunakan bahasa Indonesia santai namun sopan. Boleh disingkat wajar seperti "yg", "bisa", "udah", "buat".
 3. Jawab pendek saja (1-2 kalimat). Orang di WhatsApp tidak suka baca teks yang panjang-panjang.
-4. Sesekali gunakan emoji senyum 😊 atau 🙏 di akhir pesan.
+4. Sesekali gunakan emoji senyum \uD83D\uDE0A atau \uD83D\uDE4F di akhir pesan.
 5. JANGAN PERNAH ngaku kalau kamu itu AI/Bot. Selalu bertingkah seperti manusia asli.`,
 
                     'sales_agresif': `Nama Bot: Sales Jago
@@ -583,33 +585,33 @@ ATURAN GAYA BAHASA (PENTING!):
                     setFormData({ ...formData, prompt: templates[val] });
                   }
                 }}>
-                  <SelectTrigger className="h-11 rounded-xl bg-gray-50 font-jakarta"><SelectValue placeholder="Pilih peran & sifat AI..." /></SelectTrigger>
+                  <SelectTrigger className="h-11 rounded-xl bg-gray-50 font-jakarta"><SelectValue placeholder={t("Pilih peran & sifat AI...")} /></SelectTrigger>
                   <SelectContent className="font-jakarta">
-                    <SelectItem value="cs_ramah">🎧 Customer Service (Ramah & Santai)</SelectItem>
-                    <SelectItem value="sales_agresif">🛒 Sales / Kasir (Hard Selling)</SelectItem>
-                    <SelectItem value="konsultan_ahli">💼 Konsultan (Edukasi & Pakar)</SelectItem>
-                    <SelectItem value="admin_gaul">😎 Admin Sosmed (Gaul & Gen Z)</SelectItem>
-                    <SelectItem value="cs_formal">👔 CS Korporat (Formal & Baku)</SelectItem>
+                    <SelectItem value="cs_ramah">\uD83C\uDFA7 Customer Service (Ramah & Santai)</SelectItem>
+                    <SelectItem value="sales_agresif">\uD83D\uDED2 Sales / Kasir (Hard Selling)</SelectItem>
+                    <SelectItem value="konsultan_ahli">\uD83D\uDCBC Konsultan (Edukasi & Pakar)</SelectItem>
+                    <SelectItem value="admin_gaul">\uD83D\uDE0E Admin Sosmed (Gaul & Gen Z)</SelectItem>
+                    <SelectItem value="cs_formal">\uD83D\uDC54 CS Korporat (Formal & Baku)</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-[10px] text-muted-foreground">Memilih opsi peran di atas akan otomatis mengisi Instruksi Dasar di bawah.</p>
+                <p className="text-[10px] text-muted-foreground">{t('Memilih opsi peran di atas akan otomatis mengisi Instruksi Dasar di bawah.')}</p>
               </div>
 
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase">System Prompt</Label>
+                <Label className="text-xs font-bold uppercase">{t('System Prompt')}</Label>
                 <Textarea
                   value={formData.prompt}
                   onChange={(e) => setFormData({ ...formData, prompt: e.target.value })}
-                  placeholder="Define behavior..."
+                  placeholder={t("Define behavior...")}
                   className="min-h-[160px] rounded-xl bg-gray-50 p-4 resize-none leading-relaxed font-jakarta"
                 />
               </div>
 
               <div className="flex gap-4 pt-4 border-t">
                 <Button onClick={handleSave} disabled={isSaving} className="flex-1 h-12 bg-[#1E90FF] text-white font-bold rounded-xl shadow-lg shadow-[#1E90FF]/20 font-jakarta">
-                  {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : view === 'edit' ? 'Update Agent' : 'Create Agent'}
+                  {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : view === 'edit' ? t('Edit Agent') : t('Create Agent')}
                 </Button>
-                <Button variant="ghost" onClick={() => setView('list')} className="h-12 px-8 font-bold text-muted-foreground font-jakarta">Cancel</Button>
+                <Button variant="ghost" onClick={() => setView('list')} className="h-12 px-8 font-bold text-muted-foreground font-jakarta">{t('Cancel')}</Button>
               </div>
             </Card>
           </div>
@@ -624,7 +626,7 @@ ATURAN GAYA BAHASA (PENTING!):
             </div>
             <div>
               <DialogTitle className="text-lg font-bold text-white font-jakarta">{activeTestAgent?.name}</DialogTitle>
-              <p className="text-[10px] opacity-80 uppercase font-bold tracking-widest mt-1 font-jakarta">Live Simulator</p>
+              <p className="text-[10px] opacity-80 uppercase font-bold tracking-widest mt-1 font-jakarta">{t('Live Simulator')}</p>
             </div>
           </div>
           <div className="h-[320px] bg-gray-50 p-6 overflow-y-auto font-jakarta flex flex-col gap-3">
@@ -638,13 +640,13 @@ ATURAN GAYA BAHASA (PENTING!):
             ))}
             {isTestLoading && (
               <div className="bg-white p-3 rounded-2xl rounded-tl-none border text-sm shadow-sm max-w-[85%] self-start flex items-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin text-[#1E90FF]" /> Thinking...
+                <Loader2 className="w-4 h-4 animate-spin text-[#1E90FF]" /> {t('Thinking...')}
               </div>
             )}
           </div>
           <div className="p-4 bg-white border-t flex gap-2">
             <Input
-              placeholder="Type something..."
+              placeholder={t("Type something...")}
               className="h-12 rounded-xl bg-gray-50 border-none font-jakarta"
               value={testInput}
               onChange={(e) => setTestInput(e.target.value)}
@@ -729,8 +731,8 @@ ATURAN GAYA BAHASA (PENTING!):
       <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
         <DialogContent className="sm:max-w-[600px] rounded-[2rem] p-0 overflow-hidden">
           <div className="p-6 border-b border-border bg-gray-50/50">
-            <DialogTitle className="text-lg font-bold">Import from Catalog</DialogTitle>
-            <p className="text-xs text-muted-foreground mt-1 break-words">Select products to add to your agent's knowledge base.</p>
+            <DialogTitle className="text-lg font-bold">{t('Import from Catalog')}</DialogTitle>
+            <p className="text-xs text-muted-foreground mt-1 break-words">{t("Select products to add to your agent's knowledge base.")}</p>
           </div>
           <div className="p-6 max-h-[400px] overflow-y-auto space-y-3">
             {catalogProducts.length > 0 ? catalogProducts.map(product => (
@@ -757,15 +759,15 @@ ATURAN GAYA BAHASA (PENTING!):
               </div>
             )) : (
               <div className="text-center py-10 text-muted-foreground">
-                <p>No products found in catalog.</p>
-                <Button variant="link" className="text-[#1E90FF] h-auto p-0 text-xs" onClick={() => window.open('/product-manager', '_blank')}>Go to Product Manager</Button>
+                <p>{t('No products found in catalog.')}</p>
+                <Button variant="link" className="text-[#1E90FF] h-auto p-0 text-xs" onClick={() => window.open('/product-manager', '_blank')}>{t('Go to Product Manager')}</Button>
               </div>
             )}
           </div>
           <div className="p-6 border-t border-border bg-gray-50/50 flex justify-end gap-3">
-            <Button variant="ghost" onClick={() => setIsImportOpen(false)} className="rounded-xl font-bold">Cancel</Button>
+            <Button variant="ghost" onClick={() => setIsImportOpen(false)} className="rounded-xl font-bold">{t('Cancel')}</Button>
             <Button onClick={handleImport} className="bg-[#1E90FF] text-white rounded-xl font-bold px-6">
-              Import ({selectedImportIds.length})
+              {t('Import')} ({selectedImportIds.length})
             </Button>
           </div>
         </DialogContent>

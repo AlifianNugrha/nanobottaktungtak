@@ -38,6 +38,7 @@ import {
 
 import { getProducts, createProduct, updateProduct, deleteProduct } from '@/app/actions/product-actions';
 import { useEffect } from 'react';
+import { useLanguage } from '@/components/language-provider';
 
 // Data Dummy Awal
 const INITIAL_PRODUCTS: any[] = [];
@@ -45,6 +46,7 @@ const INITIAL_PRODUCTS: any[] = [];
 const INITIAL_CATEGORIES = ['Electronics', 'Laptop', 'Smartphone', 'Accessories', 'General'];
 
 export default function ProductManagerPage() {
+  const { t } = useLanguage();
   const [view, setView] = useState<'list' | 'add' | 'edit'>('list');
   const [products, setProducts] = useState(INITIAL_PRODUCTS);
   const [limit, setLimit] = useState(999);
@@ -79,7 +81,7 @@ export default function ProductManagerPage() {
 
       if (error) {
         console.error('Supabase Upload Error:', error);
-        alert(`Gagal upload ke Supabase: ${error.message}. Pastikan bucket 'products' sudah dibuat dan Public.`);
+        alert(t("Failed to upload image: ") + error.message);
         setIsUploading(false);
         return;
       }
@@ -96,7 +98,7 @@ export default function ProductManagerPage() {
 
     } catch (err) {
       console.error(err);
-      alert('Terjadi kesalahan saat upload.');
+      alert(t('Terjadi kesalahan saat upload.'));
     }
     setIsUploading(false);
   };
@@ -127,7 +129,7 @@ export default function ProductManagerPage() {
 
   // --- LOGIKA PRODUK ---
   const handleSaveProduct = async () => {
-    if (!formData.name || !formData.price) return alert("Nama dan Harga wajib diisi!");
+    if (!formData.name || !formData.price) return alert(t("Name and Price are required!"));
     setIsSaving(true);
 
     const fData = new FormData();
@@ -150,18 +152,18 @@ export default function ProductManagerPage() {
       setView('list');
       setFormData({ id: '', name: '', price: '', category: 'General', stock: '', description: '', image: '' });
     } else {
-      alert(res.error || "Gagal menyimpan produk");
+      alert(res.error || t("Failed to save product"));
     }
     setIsSaving(false);
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("Yakin ingin menghapus produk ini?")) {
+    if (confirm(t("Delete this product?"))) {
       const res = await deleteProduct(id);
       if (res.success) {
         fetchProducts();
       } else {
-        alert(res.error || "Gagal menghapus produk");
+        alert(res.error || t("Failed to delete product"));
       }
     }
   };
@@ -175,7 +177,7 @@ export default function ProductManagerPage() {
   };
 
   const deleteCategory = (catToDelete: string) => {
-    if (catToDelete === 'General') return alert("Kategori 'General' tidak bisa dihapus.");
+    if (catToDelete === 'General') return alert(t("Category 'General' cannot be deleted."));
     setCategories(categories.filter(c => c !== catToDelete));
   };
 
@@ -193,12 +195,12 @@ export default function ProductManagerPage() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-3xl font-bold tracking-tight">
-                {view === 'list' ? 'Product Catalog' : view === 'edit' ? 'Edit Product' : 'New Product'}
+                {view === 'list' ? t('Product Catalog') : view === 'edit' ? t('Edit Product') : t('New Product')}
               </h1>
               {view === 'list' && (
                 <>
                   <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${products.length >= limit ? 'bg-red-50 text-red-600 border-red-200' : 'bg-green-50 text-green-600 border-green-200'}`}>
-                    {products.length} / {limit > 900 ? '∞' : limit} Used
+                    {products.length} / {limit > 900 ? '∞' : limit} {t('Used')}
                   </span>
                   {products.length >= limit && (
                     <Link href="/dashboard/upgrade" className="ml-2 text-[10px] font-black text-[#1E90FF] uppercase tracking-wider hover:underline flex items-center gap-1 animate-pulse">
@@ -208,7 +210,7 @@ export default function ProductManagerPage() {
                 </>
               )}
             </div>
-            <p className="text-muted-foreground text-sm">Kelola inventaris dan kategori produk Anda.</p>
+            <p className="text-muted-foreground text-sm">{t('Manage your catalog and categories.')}</p>
           </div>
         </div>
 
@@ -218,17 +220,17 @@ export default function ProductManagerPage() {
             <Dialog open={isCatModalOpen} onOpenChange={setIsCatModalOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="w-full sm:w-auto gap-2 h-11 px-5 font-bold rounded-xl border-border">
-                  <Tags className="w-4 h-4" /> Categories
+                  <Tags className="w-4 h-4" /> {t('Categories')}
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[400px] rounded-3xl p-6">
                 <DialogHeader>
-                  <DialogTitle className="text-xl font-bold">Manage Categories</DialogTitle>
+                  <DialogTitle className="text-xl font-bold">{t('Manage Categories')}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 mt-4">
                   <div className="flex gap-2">
                     <Input
-                      placeholder="New category name..."
+                      placeholder={t("New category name...")}
                       value={newCatInput}
                       onChange={(e) => setNewCatInput(e.target.value)}
                       className="h-11 rounded-xl bg-gray-50"
@@ -257,7 +259,7 @@ export default function ProductManagerPage() {
               disabled={products.length >= limit}
               className={`w-full sm:w-auto text-white gap-2 h-11 px-6 font-bold shadow-lg rounded-xl transition-all ${products.length >= limit ? 'bg-gray-300 cursor-not-allowed text-gray-500 shadow-none' : 'bg-[#1E90FF] hover:bg-[#187bcd] shadow-[#1E90FF]/20'}`}
             >
-              {products.length >= limit ? 'Limit Reached' : <><Plus className="w-4 h-4" /> Add Product</>}
+              {products.length >= limit ? t('Limit Reached') : <><Plus className="w-4 h-4" /> {t('Add Product')}</>}
             </Button>
           </div>
         )}
@@ -269,11 +271,11 @@ export default function ProductManagerPage() {
           {products.length >= limit && limit < 100 && (
             <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white flex items-center justify-between shadow-xl mb-6 relative overflow-hidden group hover:scale-[1.01] transition-transform">
               <div className="relative z-10">
-                <h3 className="text-2xl font-black italic uppercase tracking-tighter mb-1">Unlock Unlimited Products! 🚀</h3>
-                <p className="text-blue-100 text-sm font-medium opacity-90">Upgrade to PRO plan to upload unlimited products and boost your sales.</p>
+                <h3 className="text-2xl font-black italic uppercase tracking-tighter mb-1">{t('Unlock Unlimited Products! 🚀')}</h3>
+                <p className="text-blue-100 text-sm font-medium opacity-90">{t('Upgrade to PRO plan to upload unlimited products and boost your sales.')}</p>
               </div>
               <Button onClick={() => window.location.href = '/dashboard/upgrade'} className="relative z-10 bg-white text-blue-600 font-bold hover:bg-gray-50 shadow-lg border-2 border-transparent hover:border-blue-200">
-                Upgrade Now ⚡
+                {t('Upgrade Now ⚡')}
               </Button>
               {/* Decoration */}
               <div className="absolute right-0 top-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
@@ -282,7 +284,7 @@ export default function ProductManagerPage() {
           <div className="relative max-w-md">
             <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Search products..."
+              placeholder={t("Search products...")}
               className="pl-10 h-11 rounded-xl bg-white border-border"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -308,9 +310,9 @@ export default function ProductManagerPage() {
                       <h3 className="font-bold text-lg leading-tight">{product.name}</h3>
                       <p className="font-bold text-primary">Rp {product.price}</p>
                     </div>
-                    <p className="text-xs text-muted-foreground line-clamp-2 mb-4">{product.description || 'No description available.'}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-2 mb-4">{product.description || t('No description available.')}</p>
                     <div className="flex items-center justify-between pt-4 border-t">
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase">Stock: {product.stock}</span>
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase">{t('Stock')}: {product.stock}</span>
                       <div className="flex gap-1">
                         <Button variant="ghost" size="icon" onClick={() => { setFormData(product); setView('edit'); }} className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary">
                           <Settings2 className="w-4 h-4" />
@@ -326,8 +328,8 @@ export default function ProductManagerPage() {
             ) : (
               <div className="col-span-full py-20 text-center">
                 <Package className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
-                <p className="text-muted-foreground font-medium">No products found.</p>
-                <p className="text-xs text-muted-foreground mt-1">Start by adding a new product to your catalog.</p>
+                <p className="text-muted-foreground font-medium">{t('No products found.')}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('Start by adding a new product to your catalog.')}</p>
               </div>
             )}
           </div>
@@ -336,14 +338,14 @@ export default function ProductManagerPage() {
         /* --- ADD/EDIT FORM --- */
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in slide-in-from-bottom-4 duration-500">
           <Card className="p-6 text-center space-y-4 shadow-sm h-fit">
-            <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Product Image</Label>
+            <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('Product Image')}</Label>
             <div className="aspect-square w-full max-w-[200px] mx-auto border-2 border-dashed border-primary/20 rounded-[2rem] flex flex-col items-center justify-center bg-gray-50 overflow-hidden relative mb-4">
               {formData.image ? (
                 <img src={formData.image} alt="Preview" className="w-full h-full object-cover" />
               ) : (
                 <div className="flex flex-col items-center justify-center text-muted-foreground p-4">
                   <Upload className="w-10 h-10 mb-2 opacity-20" />
-                  <span className="text-[10px] font-bold uppercase opacity-50">No Image Selected</span>
+                  <span className="text-[10px] font-bold uppercase opacity-50">{t('No Image Selected')}</span>
                 </div>
               )}
             </div>
@@ -366,11 +368,11 @@ export default function ProductManagerPage() {
               >
                 {isUploading ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Uploading...
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t('Uploading...')}
                   </>
                 ) : (
                   <>
-                    <Upload className="w-4 h-4 mr-2" /> Choose Image
+                    <Upload className="w-4 h-4 mr-2" /> {t('Choose Image')}
                   </>
                 )}
               </Button>
@@ -381,7 +383,7 @@ export default function ProductManagerPage() {
                   onClick={() => setFormData({ ...formData, image: '' })}
                   className="w-full text-destructive hover:bg-destructive/10 border-destructive/20 font-bold rounded-xl"
                 >
-                  Remove Image
+                  {t('Remove Image')}
                 </Button>
               )}
             </div>
@@ -391,7 +393,7 @@ export default function ProductManagerPage() {
             <Card className="p-8 space-y-6 shadow-sm">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase">Product Name</Label>
+                  <Label className="text-xs font-bold uppercase">{t('Product Name')}</Label>
                   <Input
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -399,7 +401,7 @@ export default function ProductManagerPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase">Category</Label>
+                  <Label className="text-xs font-bold uppercase">{t('Category')}</Label>
                   <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}>
                     <SelectTrigger className="h-11 rounded-xl bg-gray-50/50"><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -410,7 +412,7 @@ export default function ProductManagerPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase">Price (IDR)</Label>
+                  <Label className="text-xs font-bold uppercase">{t('Price (IDR)')}</Label>
                   <Input
                     value={formData.price}
                     onChange={(e) => setFormData({ ...formData, price: e.target.value })}
@@ -418,7 +420,7 @@ export default function ProductManagerPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase">Stock</Label>
+                  <Label className="text-xs font-bold uppercase">{t('Stock')}</Label>
                   <Input
                     type="number"
                     value={formData.stock}
@@ -429,19 +431,19 @@ export default function ProductManagerPage() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase">Description</Label>
+                <Label className="text-xs font-bold uppercase">{t('Description')}</Label>
                 <Textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Product details..." className="min-h-[120px] rounded-xl bg-gray-50/50 p-4 resize-none"
+                  placeholder={t("Product details...")} className="min-h-[120px] rounded-xl bg-gray-50/50 p-4 resize-none"
                 />
               </div>
 
               <div className="flex gap-4 pt-4 border-t">
                 <Button onClick={handleSaveProduct} disabled={isSaving} className="flex-1 h-12 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20">
-                  {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : view === 'edit' ? 'Update Product' : 'Save Product'}
+                  {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : view === 'edit' ? t('Update Product') : t('Save Product')}
                 </Button>
-                <Button variant="ghost" onClick={() => setView('list')} className="h-12 px-8 font-bold text-muted-foreground">Cancel</Button>
+                <Button variant="ghost" onClick={() => setView('list')} className="h-12 px-8 font-bold text-muted-foreground">{t('Cancel')}</Button>
               </div>
             </Card>
           </div>

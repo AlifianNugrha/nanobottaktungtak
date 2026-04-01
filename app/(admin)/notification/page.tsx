@@ -18,8 +18,10 @@ import {
 } from 'lucide-react';
 import { getNotifications, markAllRead, deleteNotifications } from '@/app/actions/notification-actions';
 import { formatDistanceToNow } from 'date-fns';
+import { useLanguage } from '@/components/language-provider';
 
 export default function NotificationPage() {
+  const { t } = useLanguage();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('All');
@@ -72,7 +74,7 @@ export default function NotificationPage() {
 
   const handleDeleteSelected = async () => {
     if (selectedIds.length === 0) return;
-    if (!confirm(`Delete ${selectedIds.length} notifications?`)) return;
+    if (!confirm(t(`Delete selected notifications?`))) return;
 
     setIsDeleting(true);
     const res = await deleteNotifications(selectedIds);
@@ -89,8 +91,8 @@ export default function NotificationPage() {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-foreground">Notifications</h1>
-          <p className="text-muted-foreground text-xs mt-1">Pusat aktivitas real-time sistem Anda.</p>
+          <h1 className="text-3xl font-black tracking-tight text-foreground">{t('Notifications')}</h1>
+          <p className="text-muted-foreground text-xs mt-1">{t('Pusat aktivitas real-time sistem Anda.')}</p>
         </div>
         <div className="flex flex-col w-full sm:flex-row sm:w-auto gap-2 sm:items-center">
           {selectedIds.length > 0 && (
@@ -101,7 +103,7 @@ export default function NotificationPage() {
               className="w-full sm:w-auto h-10 rounded-xl px-5 text-xs font-bold shadow-lg"
             >
               {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : <Trash2 className="w-3.5 h-3.5 mr-2" />}
-              Delete ({selectedIds.length})
+              {t('Delete All')} ({selectedIds.length})
             </Button>
           )}
           <Button
@@ -109,7 +111,7 @@ export default function NotificationPage() {
             disabled={isLoading || notifications.filter(n => !n.isRead).length === 0}
             className="w-full sm:w-auto h-10 rounded-xl px-5 text-xs font-bold bg-[#1E90FF] text-white shadow-lg shadow-[#1E90FF]/20 disabled:opacity-50"
           >
-            <CheckCheck className="w-3.5 h-3.5 mr-2" /> Mark All Read
+            <CheckCheck className="w-3.5 h-3.5 mr-2" /> {t('Mark All Read')}
           </Button>
         </div>
       </div>
@@ -126,7 +128,7 @@ export default function NotificationPage() {
                 : 'text-muted-foreground hover:text-foreground'
                 }`}
             >
-              {tab}
+              {t(tab)}
               {tab === 'Unread' && notifications.filter(n => !n.isRead).length > 0 && (
                 <span className="ml-2 bg-[#1E90FF] text-white px-1.5 py-0.5 rounded-md text-[9px]">
                   {notifications.filter(n => !n.isRead).length}
@@ -144,7 +146,7 @@ export default function NotificationPage() {
               onCheckedChange={handleSelectAll}
               id="select-all"
             />
-            <label htmlFor="select-all" className="text-xs font-bold cursor-pointer select-none">Select All</label>
+            <label htmlFor="select-all" className="text-xs font-bold cursor-pointer select-none">{t('Select All')}</label>
           </div>
         )}
       </div>
@@ -204,7 +206,7 @@ export default function NotificationPage() {
                       className="opacity-0 group-hover:opacity-100 transition-opacity"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (confirm('Delete this notification?')) {
+                        if (confirm(t('Delete this notification?'))) {
                           deleteNotifications([n.id]).then(() => {
                             setNotifications(current => current.filter(item => item.id !== n.id));
                           })
@@ -221,7 +223,7 @@ export default function NotificationPage() {
         ) : (
           <div className="py-20 flex flex-col items-center justify-center border-2 border-dashed border-gray-100 rounded-[2.5rem] bg-gray-50/20">
             <Bell className="w-10 h-10 text-gray-200 mb-2" />
-            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Kategori ini kosong</p>
+            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{t('Kategori ini kosong')}</p>
           </div>
         )}
       </div>

@@ -37,8 +37,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getSales, getSalesStats, createSale, deleteSale } from '@/app/actions/sales-actions';
+import { useLanguage } from '@/components/language-provider';
 
 export default function SalesMonitoringPage() {
+  const { t } = useLanguage();
   const [sales, setSales] = useState<any[]>([]);
   const [stats, setStats] = useState({
     totalRevenue: 0,
@@ -83,7 +85,7 @@ export default function SalesMonitoringPage() {
 
   const handleCreateSale = async () => {
     if (!newSale.customerName || !newSale.productName || !newSale.amount) {
-      return alert("Please fill all fields");
+      return alert(t("Please fill all fields"));
     }
 
     setIsSaving(true);
@@ -101,12 +103,12 @@ export default function SalesMonitoringPage() {
       setNewSale({ customerName: '', productName: '', amount: '', status: 'Completed' });
       fetchData();
     } else {
-      alert("Failed to create sale");
+      alert(t("Failed to create sale"));
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("Delete this transaction?")) {
+    if (confirm(t("Delete this transaction?"))) {
       await deleteSale(id);
       fetchData();
     }
@@ -126,7 +128,7 @@ export default function SalesMonitoringPage() {
     }).format(value);
   };
 
-  if (!mounted) return <div className="p-8 text-center text-slate-500">Loading dash...</div>;
+  if (!mounted) return <div className="p-8 text-center text-slate-500">{t('Loading data...')}</div>;
 
   return (
     <div className="max-w-6xl mx-auto w-full space-y-8 px-4 pb-20 animate-in fade-in duration-500 font-jakarta">
@@ -134,8 +136,8 @@ export default function SalesMonitoringPage() {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-border pb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Sales Monitoring</h1>
-          <p className="text-muted-foreground text-sm mt-1">Real-time transaction data from database.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t('Sales Monitoring')}</h1>
+          <p className="text-muted-foreground text-sm mt-1">{t('Real-time transaction data from database.')}</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
@@ -144,16 +146,16 @@ export default function SalesMonitoringPage() {
                 className="w-full sm:w-auto bg-[#1E90FF] text-white rounded-xl gap-2 font-bold h-11 px-6 shadow-lg shadow-[#1E90FF]/20 hover:bg-[#187bcd]"
                 suppressHydrationWarning
               >
-                <Plus className="w-4 h-4" /> Add Transaction
+                <Plus className="w-4 h-4" /> {t('Add Transaction')}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px] rounded-3xl p-6 font-jakarta">
               <DialogHeader>
-                <DialogTitle className="text-xl font-bold">New Transaction</DialogTitle>
+                <DialogTitle className="text-xl font-bold">{t('New Transaction')}</DialogTitle>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="space-y-2">
-                  <Label className="uppercase text-xs font-bold text-muted-foreground">Customer Name</Label>
+                  <Label className="uppercase text-xs font-bold text-muted-foreground">{t('Customer Name')}</Label>
                   <Input
                     value={newSale.customerName}
                     onChange={(e) => setNewSale({ ...newSale, customerName: e.target.value })}
@@ -162,7 +164,7 @@ export default function SalesMonitoringPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="uppercase text-xs font-bold text-muted-foreground">Product</Label>
+                  <Label className="uppercase text-xs font-bold text-muted-foreground">{t('Product')}</Label>
                   <Input
                     value={newSale.productName}
                     onChange={(e) => setNewSale({ ...newSale, productName: e.target.value })}
@@ -172,7 +174,7 @@ export default function SalesMonitoringPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="uppercase text-xs font-bold text-muted-foreground">Amount (IDR)</Label>
+                    <Label className="uppercase text-xs font-bold text-muted-foreground">{t('Amount (IDR)')}</Label>
                     <Input
                       type="number"
                       value={newSale.amount}
@@ -182,30 +184,30 @@ export default function SalesMonitoringPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="uppercase text-xs font-bold text-muted-foreground">Status</Label>
+                    <Label className="uppercase text-xs font-bold text-muted-foreground">{t('Status')}</Label>
                     <Select value={newSale.status} onValueChange={(v) => setNewSale({ ...newSale, status: v })}>
                       <SelectTrigger className="h-11 rounded-xl bg-gray-50">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Completed">Completed</SelectItem>
-                        <SelectItem value="Pending">Pending</SelectItem>
-                        <SelectItem value="Cancelled">Cancelled</SelectItem>
+                        <SelectItem value="Completed">{t('Completed')}</SelectItem>
+                        <SelectItem value="Pending">{t('Pending')}</SelectItem>
+                        <SelectItem value="Cancelled">{t('Cancelled')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
               </div>
               <div className="flex justify-end gap-3">
-                <Button variant="ghost" onClick={() => setIsAddOpen(false)} className="rounded-xl font-bold">Cancel</Button>
+                <Button variant="ghost" onClick={() => setIsAddOpen(false)} className="rounded-xl font-bold">{t('Cancel')}</Button>
                 <Button onClick={handleCreateSale} disabled={isSaving} className="bg-[#1E90FF] text-white rounded-xl font-bold px-6">
-                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Transaction'}
+                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : t('Save Transaction')}
                 </Button>
               </div>
             </DialogContent>
           </Dialog>
-          <Button variant="outline" size="icon" onClick={fetchData} className="rounded-xl h-11 w-full sm:w-11" title="Refresh Data">
-            <RefreshCcw className={`w-4 h-4 mr-2 sm:mr-0 ${isLoading ? 'animate-spin' : ''}`} /> <span className="sm:hidden">Refresh Data</span>
+          <Button variant="outline" size="icon" onClick={fetchData} className="rounded-xl h-11 w-full sm:w-11" title={t("Refresh Data")}>
+            <RefreshCcw className={`w-4 h-4 mr-2 sm:mr-0 ${isLoading ? 'animate-spin' : ''}`} /> <span className="sm:hidden">{t('Refresh Data')}</span>
           </Button>
         </div>
       </div>
@@ -215,10 +217,10 @@ export default function SalesMonitoringPage() {
         <Card className="p-6 bg-white border-border shadow-sm relative overflow-hidden group hover:border-[#1E90FF]/30 transition-all">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Total Revenue</p>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{t('Total Revenue')}</p>
               <h2 className="text-3xl font-black mt-1">{formatIDR(stats.totalRevenue)}</h2>
               <div className="flex items-center gap-1 text-green-600 text-xs font-bold mt-2">
-                <ArrowUpRight className="w-3 h-3" /> Real-time
+                <ArrowUpRight className="w-3 h-3" /> {t('Real-time')}
               </div>
             </div>
             <div className="w-12 h-12 bg-[#1E90FF]/10 rounded-2xl flex items-center justify-center text-[#1E90FF]">
@@ -230,10 +232,10 @@ export default function SalesMonitoringPage() {
         <Card className="p-6 bg-white border-border shadow-sm group hover:border-blue-400 transition-all">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Orders Processed</p>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{t('Orders Processed')}</p>
               <h2 className="text-3xl font-black mt-1">{stats.totalOrders}</h2>
               <div className="flex items-center gap-1 text-green-600 text-xs font-bold mt-2">
-                <ArrowUpRight className="w-3 h-3" /> Updated
+                <ArrowUpRight className="w-3 h-3" /> {t('Updated')}
               </div>
             </div>
             <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
@@ -245,10 +247,10 @@ export default function SalesMonitoringPage() {
         <Card className="p-6 bg-white border-border shadow-sm group hover:border-orange-400 transition-all">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Avg. Order Value</p>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{t('Avg. Order Value')}</p>
               <h2 className="text-3xl font-black mt-1">{formatIDR(stats.avgOrderValue)}</h2>
               <div className="flex items-center gap-1 text-muted-foreground text-xs font-bold mt-2">
-                <TrendingUp className="w-3 h-3" /> Calculated
+                <TrendingUp className="w-3 h-3" /> {t('Calculated')}
               </div>
             </div>
             <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600">
@@ -261,11 +263,11 @@ export default function SalesMonitoringPage() {
       {/* RECENT TRANSACTIONS TABLE */}
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <h3 className="font-bold text-lg">Recent Transactions</h3>
+          <h3 className="font-bold text-lg">{t('Recent Transactions')}</h3>
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Search orders..."
+              placeholder={t("Search orders...")}
               className="pl-9 h-10 rounded-xl bg-white border-border focus:ring-[#1E90FF]"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -278,13 +280,13 @@ export default function SalesMonitoringPage() {
             <table className="w-full text-left">
               <thead className="bg-gray-50 border-b border-border">
                 <tr>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase text-muted-foreground">Order ID</th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase text-muted-foreground">Date</th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase text-muted-foreground">Customer</th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase text-muted-foreground">Product</th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase text-muted-foreground">Amount</th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase text-muted-foreground">Status</th>
-                  <th className="px-6 py-4 text-right">Action</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase text-muted-foreground">{t('Order ID')}</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase text-muted-foreground">{t('Date')}</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase text-muted-foreground">{t('Customer')}</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase text-muted-foreground">{t('Product')}</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase text-muted-foreground">{t('Amount')}</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase text-muted-foreground">{t('Status')}</th>
+                  <th className="px-6 py-4 text-right">{t('Action')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -292,7 +294,7 @@ export default function SalesMonitoringPage() {
                   <tr>
                     <td colSpan={7} className="px-6 py-10 text-center text-muted-foreground">
                       <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-[#1E90FF]" />
-                      Loading data...
+                      {t('Loading data...')}
                     </td>
                   </tr>
                 ) : filteredSales.length > 0 ? (
@@ -311,7 +313,7 @@ export default function SalesMonitoringPage() {
                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${sale.status === 'Completed' ? 'bg-green-100 text-green-700' :
                           sale.status === 'Pending' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'
                           }`}>
-                          {sale.status}
+                          {t(sale.status)}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
@@ -324,8 +326,8 @@ export default function SalesMonitoringPage() {
                 ) : (
                   <tr>
                     <td colSpan={7} className="px-6 py-10 text-center text-muted-foreground">
-                      No sales data found. <br />
-                      <span className="text-xs cursor-pointer text-[#1E90FF] hover:underline" onClick={() => setIsAddOpen(true)}>Add your first transaction</span>
+                      {t('No sales data found.')} <br />
+                      <span className="text-xs cursor-pointer text-[#1E90FF] hover:underline" onClick={() => setIsAddOpen(true)}>{t('Add your first transaction')}</span>
                     </td>
                   </tr>
                 )}
