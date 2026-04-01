@@ -485,7 +485,7 @@ PENTING: Nama di atas adalah data dari database. Jika di dalam percakapan (Chat 
                 return `- ID: ${p.id}\n  Nama: ${p.name}\n  Deskripsi: ${p.description || 'Tidak ada info'}\n  Harga: Rp ${p.price}\n  Stok: ${p.stock}\n  ImageURL: ${p.image || 'KOSONG'}`;
             }).join('\n\n');
 
-            systemPrompt += `\n\n=== 🔴 DATABASE PRODUK TOKO (LIVE) ===\nKamu HANYA menjual produk-produk di bawah ini. HARAM hukumnya merekomendasikan produk di luar daftar ini.\n\n${productContext}\n\n=== 🔴 ATURAN MUTLAK ===\n1. KNOWLEDGE BATAS: Kamu TIDAK TAHU produk lain selain yang ada di daftar di atas. Jika user tanya produk yang tidak ada di daftar, jawab jujur: "Maaf kak, item itu lagi kosong/gak ada. Tapi aku ada rekomendasi lain nih..."\n2. SARAN PRODUK: Kalau user minta rekomendasi, pilih DARI DAFTAR DI ATAS. Jangan ngarang.\n3. FORMAT GAMBAR (PENTING): Jika ingin mengirim foto produk, SANGAT WAJIB menuliskan kode ini di akhir pesan: [IMAGE: URL_GAMBAR_DARI_DATA]. JANGAN menampilkan link gambar secara langsung di teks. JANGAN pakai markdown image syntax (![]()).\n4. GAYA BICARA: Santai, gaul, akrab (pake "kak", "gan", "siap").\n5. HARGA: Sebutkan harga sesuai data.`;
+            systemPrompt += `\n\n=== 🔴 DATABASE PRODUK TOKO (LIVE) ===\nBerikut ini adalah katalog produk yang bisa Anda tawarkan kepada pelanggan:\n\n${productContext}`;
 
             console.log(`Injecting ${dbProducts.length} products into AI Context.`);
         } else {

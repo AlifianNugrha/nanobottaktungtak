@@ -1,0 +1,72 @@
+
+Knowledge Base: Nanoartif Tech IT Consultant
+1. Identitas Perusahaan
+Nama Perusahaan: Nanoartif
+
+Slogan: Elevating Business through Intelligent Solutions.
+
+Lokasi Operasional: Surakarta (Solo), Jawa Tengah.
+
+Deskripsi Singkat: Nanoartif adalah konsultan IT spesialis pengembangan perangkat lunak modern yang fokus pada efisiensi bisnis melalui teknologi AI dan optimasi platform digital.
+
+2. Layanan Utama
+A. Jasa Pembuatan Website (Web Development)
+Kami membangun ekosistem digital yang cepat, responsif, dan SEO-friendly.
+
+Teknologi Utama: React.js, Next.js, dan Tailwind CSS.
+
+Jenis Layanan:
+
+Landing Page: Untuk profil perusahaan atau peluncuran produk.
+
+Sistem Reservasi & Menu Digital: Khusus untuk bisnis F&B (seperti projek Cafe At Eden).
+
+Dashboard Admin: Pengelolaan data internal perusahaan.
+
+Kelebihan: Performa tinggi (skor Core Web Vitals hijau), desain modern, dan kemudahan kustomisasi.
+
+B. Pembuatan AI Bot & Otomasi
+Integrasi kecerdasan buatan untuk membantu operasional bisnis 24/7.
+
+Produk Utama: NATA (Nanoartif Tech Assistant).
+
+Fungsi Bot:
+
+Menjawab pertanyaan FAQ pelanggan secara otomatis.
+
+Integrasi ke berbagai platform (WhatsApp, Telegram, atau Website).
+
+Automasi alur kerja (Lead Generation, Appointment Scheduling).
+
+Kelebihan: Mengurangi beban tim CS dan memberikan respon instan kepada klien.
+
+3. Alur Kerja (Workflow) Projek
+Konsultasi: Diskusi kebutuhan fitur dan tujuan bisnis klien.
+
+Perancangan (Design & PRD): Pembuatan Product Requirements Document (PRD) dan desain UI/UX.
+
+Development: Proses coding menggunakan teknologi modern (React/Next.js).
+
+Testing & QC: Peninjauan kualitas sebelum rilis.
+
+Deployment: Peluncuran website atau bot ke server produksi.
+
+4. Nada Bicara (Tone of Voice)
+Profesional namun Ramah: Menggunakan bahasa yang meyakinkan secara teknis namun tetap mudah dimengerti orang awam.
+
+Solutif: Fokus pada bagaimana teknologi Nanoartif menyelesaikan masalah klien (bukan sekadar menjual fitur).
+
+Efisien: Singkat, padat, dan jelas.
+
+5. FAQ (Pertanyaan Sering Diajukan)
+Q: Apakah bisa membuat website yang terintegrasi dengan chatbot?
+
+A: Tentu. Nanoartif ahli dalam menggabungkan website modern (Next.js) dengan asisten AI untuk interaksi pelanggan yang lebih baik.
+
+Q: Berapa lama durasi pengerjaan?
+
+A: Tergantung kompleksitas. Landing page rata-rata 1-2 minggu, sementara sistem kustom atau bot kompleks bisa memakan waktu 4 minggu atau lebih.
+
+Q: Di mana lokasi Nanoartif?
+
+A: Kami berbasis di Surakarta, namun melayani klien dari berbagai wilayah secara remote.

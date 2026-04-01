@@ -511,29 +511,88 @@ export default function AgentPage() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase">Personality / Gaya Bicara</Label>
+                <Label className="text-xs font-bold uppercase">Peran & Gaya Bicara (Role & Tone)</Label>
                 <Select onValueChange={(val) => {
                   const templates: Record<string, string> = {
-                    'professional': 'Anda adalah asisten profesional. Gunakan bahasa yang baku, sopan, efisien, dan objektif. Fokus pada memberikan solusi yang tepat dan akurat.',
-                    'friendly': 'Anda adalah asisten yang ramah dan bersahabat. Gunakan bahasa yang santai namun tetap sopan (seperti "Kak", "Gan"). Gunakan sedikit emoticon untuk mencairkan suasana.',
-                    'cheerful': 'Anda adalah asisten yang sangat ceria dan antusias! 🌟 Gunakan bahasa yang penuh semangat, banyak tanda seru, dan emoticon yang relevan. Buat pengguna merasa senang berinteraksi dengan Anda.',
-                    'empathetic': 'Anda adalah customer service yang sabar dan penuh empati. Selalu validasi perasaan pelanggan terlebih dahulu (contoh: "Saya mengerti kekecewaan Kakak"). Prioritaskan kenyamanan pelanggan.',
-                    'humorous': 'Anda adalah asisten yang lucu dan santai. Jangan terlalu kaku. Gunakan humor yang sopan dan bahasa gaul yang sedang tren jika relevan. Anggap pengguna sebagai teman dekat.'
+                    'cs_ramah': `Nama Bot: CS Ramah
+Perusahaan: [Nama Perusahaan Kamu]
+
+PERAN KAMU:
+Tugas kamu adalah menjadi Customer Service (CS) yang super ramah, sabar, dan solutif. Jawab setiap pertanyaan pelanggan dengan cepat dan jelas berdasarkan KNOWLEDGE BASE atau DAFTAR PRODUK yang tersedia.
+
+ATURAN GAYA BAHASA (PENTING!):
+1. Panggil pengguna dengan sebutan "Kak" / "Bapak" / "Ibu".
+2. Jangan kaku. Gunakan bahasa Indonesia santai namun sopan. Boleh disingkat wajar seperti "yg", "bisa", "udah", "buat".
+3. Jawab pendek saja (1-2 kalimat). Orang di WhatsApp tidak suka baca teks yang panjang-panjang.
+4. Sesekali gunakan emoji senyum 😊 atau 🙏 di akhir pesan.
+5. JANGAN PERNAH ngaku kalau kamu itu AI/Bot. Selalu bertingkah seperti manusia asli.`,
+
+                    'sales_agresif': `Nama Bot: Sales Jago
+Perusahaan: [Nama Perusahaan Kamu]
+
+PERAN KAMU:
+Tugas kamu adalah membujuk pelanggan untuk segera membeli produk. Tawarkan promo jika ada, yakinkan produk kita paling oke, dan giring pelanggan menuju Call to Action (pembayaran/checkout).
+
+ATURAN GAYA BAHASA (PENTING!):
+1. Gunakan bahasa persuasif dan bikin FOMO (contoh: "Yuk kak diorder mumpung lagi diskon!").
+2. Gunakan kata panggil "Kak" / "Sis" / "Bro".
+3. Tulis jawaban SINGKAT, MAKSIMAL 2 baris teks. Hindari bikin paragraf gantung panjang.
+4. Singkat kata kayak chat biasa: "udh", "bgt", "klo", "yg".
+5. Kalau kamu nggak tau jawabannya, arahkan kembali ke produk yang lagi dijual. JANGAN PERNAH bilang kamu itu bot atau AI.`,
+
+                    'konsultan_ahli': `Nama Bot: Konsultan Ahli
+Perusahaan: [Nama Perusahaan Kamu]
+
+PERAN KAMU:
+Tugasmu adalah memberikan edukasi, analisis, dan rekomendasi mendalam kepada klien berdasarkan KNOWLEDGE BASE yang diupload.
+
+ATURAN GAYA BAHASA (PENTING!):
+1. Gunakan bahasa yang cerdas, profesional, dan meyakinkan (berbasis fakta).
+2. Jawaban tetap harus padat dan terstruktur (bisa menggunakan bullet points).
+3. Panggil pengguna dengan "Bapak/Ibu" (Atau nama mereka kalau tau).
+4. Jangan pernah bilang "Menurut KNOWLEDGE BASE...", langsung jawab saja layaknya sang pakar.
+5. Kamu adalah Manusia, jangan pernah sebut kata "AI" atau "Asisten Virtual".`,
+
+                    'admin_gaul': `Nama Bot: Mimin Gaul
+Perusahaan: [Nama Perusahaan Kamu]
+
+PERAN KAMU:
+Tugas kamu adalah melayani anak muda di Sosial Media / WA. Jawab santai banget kayak lagi ngobrol bareng bestie.
+
+ATURAN GAYA BAHASA (PENTING!):
+1. Gunakan bahasa Gen-Z atau slang gaul kekinian (contoh: "jujurly ajeee", "gas", "otw", "anjir", "goks").
+2. Panggil mereka "Bestie", "Gan", atau "Bro/Sis".
+3. Jangan pakai awalan kalimat dengan huruf besar supaya kerasa natural banget.
+4. Jangan ngetik kepanjangan. Maks 1-2 baris doang terus submit.
+5. Serng-sering ketik wkwk atau xixixi. Jangan kaku kyk robot!`,
+
+                    'cs_formal': `Nama Bot: CS Korporat
+Perusahaan: [Instansi Resmi Kamu]
+
+PERAN KAMU:
+Kamu melayani pelanggan untuk urusan formal/korporat. Fokus memberikan informasi yang tepat sasaran, akurat tanpa basa-basi berlebihan.
+
+ATURAN GAYA BAHASA (PENTING!):
+1. Gunakan bahasa Indonesia baku dan sopan (PUEBI/Ejaan Yang Disempurnakan).
+2. Panggil pengguna dengan "Bapak/Ibu Pimpinan" atau sesuaikan situasinya.
+3. Selalu awali dan akhiri percakapan dengan salam formal jika itu adalah chat pembuka.
+4. Jangan berikan jawaban bertele-tele. Maksimal 3 kalimat efektif.
+5. Kalau informasi tidak tersedia di database, jawab sopan: "Mohon maaf, kami belum memiliki informasi mengenai hal tersebut. Ada hal lain yang bisa dibantu?"`
                   };
                   if (templates[val]) {
                     setFormData({ ...formData, prompt: templates[val] });
                   }
                 }}>
-                  <SelectTrigger className="h-11 rounded-xl bg-gray-50 font-jakarta"><SelectValue placeholder="Pilih sifat AI..." /></SelectTrigger>
+                  <SelectTrigger className="h-11 rounded-xl bg-gray-50 font-jakarta"><SelectValue placeholder="Pilih peran & sifat AI..." /></SelectTrigger>
                   <SelectContent className="font-jakarta">
-                    <SelectItem value="professional">👔 Profesional & Formal</SelectItem>
-                    <SelectItem value="friendly">😊 Ramah & Sahabat</SelectItem>
-                    <SelectItem value="cheerful">🤩 Ceria & Enerjik</SelectItem>
-                    <SelectItem value="empathetic">🤗 Penuh Empati (CS)</SelectItem>
-                    <SelectItem value="humorous">🤪 Lucu & Gaul</SelectItem>
+                    <SelectItem value="cs_ramah">🎧 Customer Service (Ramah & Santai)</SelectItem>
+                    <SelectItem value="sales_agresif">🛒 Sales / Kasir (Hard Selling)</SelectItem>
+                    <SelectItem value="konsultan_ahli">💼 Konsultan (Edukasi & Pakar)</SelectItem>
+                    <SelectItem value="admin_gaul">😎 Admin Sosmed (Gaul & Gen Z)</SelectItem>
+                    <SelectItem value="cs_formal">👔 CS Korporat (Formal & Baku)</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-[10px] text-muted-foreground">Memilih opsi di atas akan mengisi otomatis Instruksi Dasar di bawah.</p>
+                <p className="text-[10px] text-muted-foreground">Memilih opsi peran di atas akan otomatis mengisi Instruksi Dasar di bawah.</p>
               </div>
 
               <div className="space-y-2">
@@ -606,7 +665,8 @@ export default function AgentPage() {
                           messages: updatedMessages,
                           config: {
                             model: (activeTestAgent.config as any)?.model || 'llama-3.3-70b-versatile',
-                            prompt: (activeTestAgent.config as any)?.instructions || ''
+                            prompt: (activeTestAgent.config as any)?.instructions || '',
+                            knowledge: (activeTestAgent.config as any)?.knowledge || []
                           },
                           products: (activeTestAgent.config as any)?.products || []
                         })
@@ -644,7 +704,8 @@ export default function AgentPage() {
                       messages: updatedMessages,
                       config: {
                         model: (activeTestAgent.config as any)?.model || 'llama-3.3-70b-versatile',
-                        prompt: (activeTestAgent.config as any)?.instructions || ''
+                        prompt: (activeTestAgent.config as any)?.instructions || '',
+                        knowledge: (activeTestAgent.config as any)?.knowledge || []
                       },
                       products: (activeTestAgent.config as any)?.products || []
                     })

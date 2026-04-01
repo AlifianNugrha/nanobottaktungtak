@@ -340,29 +340,29 @@ export default function AgentPage() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase">Personality / Gaya Bicara</Label>
+                <Label className="text-xs font-bold uppercase">Peran & Gaya Bicara (Role & Tone)</Label>
                 <Select onValueChange={(val) => {
                   const templates: Record<string, string> = {
-                    'professional': 'Anda adalah asisten profesional. Gunakan bahasa yang baku, sopan, efisien, dan objektif. Fokus pada memberikan solusi yang tepat dan akurat.',
-                    'friendly': 'Anda adalah asisten yang ramah dan bersahabat. Gunakan bahasa yang santai namun tetap sopan (seperti "Kak", "Gan"). Gunakan sedikit emoticon untuk mencairkan suasana.',
-                    'cheerful': 'Anda adalah asisten yang sangat ceria dan antusias! 🌟 Gunakan bahasa yang penuh semangat, banyak tanda seru, dan emoticon yang relevan. Buat pengguna merasa senang berinteraksi dengan Anda.',
-                    'empathetic': 'Anda adalah customer service yang sabar dan penuh empati. Selalu validasi perasaan pelanggan terlebih dahulu (contoh: "Saya mengerti kekecewaan Kakak"). Prioritaskan kenyamanan pelanggan.',
-                    'humorous': 'Anda adalah asisten yang lucu dan santai. Jangan terlalu kaku. Gunakan humor yang sopan dan bahasa gaul yang sedang tren jika relevan. Anggap pengguna sebagai teman dekat.'
+                    'cs_ramah': 'Peran kamu adalah Customer Service (CS) yang super ramah dan solutif. Tugas utamamu adalah membantu pelanggan, menjawab pertanyaan, dan sabar menghadapi keluhan. Gunakan bahasa yang sopan tapi tetap santai (panggil "Kak", "Bapak/Ibu").',
+                    'sales_agresif': 'Peran kamu adalah Sales Assistant / Kasir yang jago jualan (Hard Selling). Tugasmu adalah membujuk pelanggan untuk segera membeli, meyakinkan bahwa produk yang ditawarkan adalah yang terbaik dan sedang promo. Gunakan bahasa persuasif, seru, dan mendorong Call to Action (contoh: "Yuk kak diorder mumpung lg diskon!").',
+                    'konsultan_ahli': 'Peran kamu adalah Konsultan Ahli / Pakar. Tugasmu adalah memberikan edukasi, analisis, dan rekomendasi mendalam kepada klien. Gunakan bahasa yang cerdas, profesional, tapi mudah dipahami. Tampil meyakinkan dan berbasis data/fakta.',
+                    'admin_gaul': 'Peran kamu adalah Admin Sosmed yang super gaul dan kekinian. Kamu melayani pelanggan anak muda. Gunakan bahasa tren, banyak singkatan gaul (biar bestie banget), dan bercanda.',
+                    'cs_formal': 'Peran kamu adalah Customer Service korporat atau instansi resmi. Gunakan bahasa Indonesia baku dan sangat sopan (Ejaan Yang Disempurnakan). Fokus memberikan info yang detail dan akurat tanpa basa-basi berlebihan.'
                   };
                   if (templates[val]) {
                     setFormData({ ...formData, prompt: templates[val] });
                   }
                 }}>
-                  <SelectTrigger className="h-11 rounded-xl bg-gray-50"><SelectValue placeholder="Pilih sifat AI..." /></SelectTrigger>
+                  <SelectTrigger className="h-11 rounded-xl bg-gray-50"><SelectValue placeholder="Pilih peran & sifat AI..." /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="professional">👔 Profesional & Formal</SelectItem>
-                    <SelectItem value="friendly">😊 Ramah & Sahabat</SelectItem>
-                    <SelectItem value="cheerful">🤩 Ceria & Enerjik</SelectItem>
-                    <SelectItem value="empathetic">🤗 Penuh Empati (CS)</SelectItem>
-                    <SelectItem value="humorous">🤪 Lucu & Gaul</SelectItem>
+                    <SelectItem value="cs_ramah">🎧 Customer Service (Ramah & Santai)</SelectItem>
+                    <SelectItem value="sales_agresif">🛒 Sales / Kasir (Hard Selling)</SelectItem>
+                    <SelectItem value="konsultan_ahli">💼 Konsultan (Edukasi & Pakar)</SelectItem>
+                    <SelectItem value="admin_gaul">😎 Admin Sosmed (Gaul & Gen Z)</SelectItem>
+                    <SelectItem value="cs_formal">👔 CS Korporat (Formal & Baku)</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-[10px] text-muted-foreground">Memilih opsi di atas akan mengisi otomatis Instruksi Dasar di bawah.</p>
+                <p className="text-[10px] text-muted-foreground">Memilih opsi peran di atas akan otomatis mengisi Instruksi Dasar di bawah.</p>
               </div>
 
               <div className="space-y-2">
@@ -436,7 +436,8 @@ export default function AgentPage() {
                           messages: updatedMessages,
                           config: {
                             model: activeTestAgent.config?.model || 'llama-3.3-70b-versatile',
-                            prompt: activeTestAgent.config?.instructions || ''
+                            prompt: activeTestAgent.config?.instructions || '',
+                            knowledge: activeTestAgent.config?.knowledge || []
                           },
                           products: activeTestAgent.config?.products || []
                         })
@@ -474,7 +475,8 @@ export default function AgentPage() {
                       messages: updatedMessages,
                       config: {
                         model: activeTestAgent.config?.model || 'llama-3.3-70b-versatile',
-                        prompt: activeTestAgent.config?.instructions || ''
+                        prompt: activeTestAgent.config?.instructions || '',
+                        knowledge: activeTestAgent.config?.knowledge || []
                       },
                       products: activeTestAgent.config?.products || []
                     })

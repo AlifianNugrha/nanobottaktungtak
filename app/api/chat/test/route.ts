@@ -11,38 +11,31 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const { messages, config, products, userId } = body;
 
-        if (!userId) {
-            return NextResponse.json({ error: 'User ID is required for rate limiting' }, { status: 400 });
-        }
-
         if (!config || !config.model) {
             return NextResponse.json({ error: 'Model configuration is required' }, { status: 400 });
         }
 
-        // Check Rate Limiting
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { currentTokenUsage: true, maxTokenLimit: true, subscriptionPlan: true }
-        });
-
-        if (!user) {
-            return NextResponse.json({ error: 'User not found' }, { status: 404 });
-        }
-
-        // Estimate tokens (roughly 4 chars per token for a simple check, or just fixed per request)
-        // For a more accurate count, we should use a tokenizer, but here we'll use a rough estimate
-        // based on the input messages.
         const estimatedPromptTokens = JSON.stringify(messages).length / 4;
-        const maxTokensAllowed = user.maxTokenLimit;
 
-        if (user.currentTokenUsage + estimatedPromptTokens > maxTokensAllowed) {
-            return NextResponse.json(
-                { 
-                    error: 'Rate limit exceeded', 
-                    message: `You have reached your limit of ${maxTokensAllowed} tokens. Please upgrade your plan.`
-                }, 
-                { status: 429 }
-            );
+        // Check Rate Limiting optionally
+        if (userId) {
+            const user = await prisma.user.findUnique({
+                where: { id: userId },
+                select: { currentTokenUsage: true, maxTokenLimit: true, subscriptionPlan: true }
+            });
+
+            if (user) {
+                const maxTokensAllowed = user.maxTokenLimit;
+                if (user.currentTokenUsage + estimatedPromptTokens > maxTokensAllowed) {
+                    return NextResponse.json(
+                        { 
+                            error: 'Rate limit exceeded', 
+                            message: `You have reached your limit of ${maxTokensAllowed} tokens. Please upgrade your plan.`
+                        }, 
+                        { status: 429 }
+                    );
+                }
+            }
         }
 
         const systemPrompt = config.prompt || 'You are a helpful AI assistant.';
@@ -50,14 +43,15 @@ export async function POST(req: NextRequest) {
         let finalSystemPrompt = systemPrompt;
 
         // Append product information if available
+        let productContext = "Belum ada produk saat ini.";
         if (products && products.length > 0) {
-            const productContext = products.map((p: any) => {
+            productContext = products.map((p: any) => {
                 if (typeof p === 'string') return `- ${p}`;
                 return `- ${p.name}: ${p.description || ''} (Price: ${p.price || 'N/A'})`;
             }).join('\n');
-
-            finalSystemPrompt += `\n\nHere is the list of products you can recommend:\n${productContext}\n\nWhen recommending a product, please include its image URL if available in the format [IMAGE: <url>].`;
         }
+
+        finalSystemPrompt += `\n\n=== 🔴 DATABASE PRODUK TOKO (LIVE) ===\nBerikut ini adalah katalog produk yang bisa Anda tawarkan kepada pelanggan:\n\n${productContext}`;
 
         // CUSTOM KNOWLEDGE BASE
         if (config.knowledge && config.knowledge.length > 0) {
@@ -95,14 +89,16 @@ export async function POST(req: NextRequest) {
         const totalTokensUsed = chatCompletion.usage?.total_tokens || 
             (estimatedPromptTokens + (reply.length / 4)); // fallback if usage not provided
 
-        await prisma.user.update({
-            where: { id: userId },
-            data: {
-                currentTokenUsage: { increment: Math.ceil(totalTokensUsed) },
-                aiMessageCount: { increment: 1 },
-                lastMessageAt: new Date()
-            }
-        });
+        if (userId) {
+            await prisma.user.update({
+                where: { id: userId },
+                data: {
+                    currentTokenUsage: { increment: Math.ceil(totalTokensUsed) },
+                    aiMessageCount: { increment: 1 },
+                    lastMessageAt: new Date()
+                }
+            });
+        }
 
         return NextResponse.json({ reply, usage: { totalTokensUsed } });
     } catch (error: any) {
