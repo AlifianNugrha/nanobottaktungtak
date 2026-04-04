@@ -3,11 +3,13 @@
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { sendMessage } from '@/lib/whatsapp-service';
+import { sendTelegramMessage } from '@/lib/telegram-service';
 
 // --- INBOX ACTIONS ---
 
 /**
  * Get all active conversations for a user's integrations
+ * Now supports both WhatsApp AND Telegram
  */
 export async function getInboxConversations(userId: string) {
     try {
@@ -15,7 +17,7 @@ export async function getInboxConversations(userId: string) {
             where: {
                 integration: {
                     userId: userId,
-                    platform: 'WhatsApp' // Filter specifically for WA for now
+                    platform: { in: ['WhatsApp', 'Telegram'] }
                 }
             },
             orderBy: { updatedAt: 'desc' },
@@ -26,8 +28,6 @@ export async function getInboxConversations(userId: string) {
             }
         });
 
-        // Enrich with customer data if needed (optional optimization)
-        // For now, return raw conversation
         return conversations;
     } catch (error) {
         console.error('Error fetching inbox items:', error);
@@ -56,6 +56,7 @@ export async function getConversationDetails(id: string) {
 
 /**
  * Send a manual message (Human Handoff)
+ * Supports both WhatsApp and Telegram
  */
 export async function sendManualMessage(conversationId: string, message: string) {
     try {
@@ -66,9 +67,23 @@ export async function sendManualMessage(conversationId: string, message: string)
 
         if (!conversation) throw new Error('Conversation not found');
 
-        // SEND TO WHATSAPP (Via server-side logic)
-        // We import sendMessage from whatsapp-service which handles the Baileys socket
-        await sendMessage(conversation.integration.id, conversation.contactNumber, message);
+        const platform = conversation.integration.platform;
+
+        // ROUTE TO CORRECT SERVICE BASED ON PLATFORM
+        if (platform === 'Telegram') {
+            await sendTelegramMessage(
+                conversation.integration.id,
+                conversation.contactNumber,
+                message
+            );
+        } else {
+            // Default: WhatsApp
+            await sendMessage(
+                conversation.integration.id,
+                conversation.contactNumber,
+                message
+            );
+        }
 
         // SAVE TO DB HISTORY
         const msgs: any[] = (conversation.messages as any[]) || [];

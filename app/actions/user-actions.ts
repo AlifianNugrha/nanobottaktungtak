@@ -100,9 +100,11 @@ export async function getUsers() {
                 email: true,
                 role: true,
                 createdAt: true,
-                // Status isn't a field in the schema, we might need to assume Active or check something else
-                // For now, let's just use a dummy status or add it if needed.
-                // The current page expects 'status'
+                subscriptionPlan: true,
+                subscriptionStart: true,
+                subscriptionEnd: true,
+                maxTokenLimit: true,
+                currentTokenUsage: true,
             }
         });
 

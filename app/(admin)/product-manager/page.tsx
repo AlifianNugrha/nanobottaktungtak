@@ -35,10 +35,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
 import { getProducts, createProduct, updateProduct, deleteProduct } from '@/app/actions/product-actions';
 import { useEffect } from 'react';
 import { useLanguage } from '@/components/language-provider';
+import imageCompression from 'browser-image-compression';
 
 // Data Dummy Awal
 const INITIAL_PRODUCTS: any[] = [];
@@ -72,12 +72,30 @@ export default function ProductManagerPage() {
     setIsUploading(true);
 
     try {
-      // 1. Upload to Supabase Storage (Bucket: 'products')
-      const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
+      // 1. Compress Image
+      const options = {
+        maxSizeMB: 0.5, // 500KB Max
+        maxWidthOrHeight: 1200, // 1200px Max dimensions
+        useWebWorker: true,
+      };
+      
+      let finalFile: File = file;
+      try {
+        if (file.type.startsWith('image/')) {
+          const compressedBlob = await imageCompression(file, options);
+          finalFile = new File([compressedBlob], file.name, { type: compressedBlob.type });
+          console.log(`[Compression] Original: ${(file.size/1024/1024).toFixed(2)} MB -> Compressed: ${(finalFile.size/1024/1024).toFixed(2)} MB`);
+        }
+      } catch (compErr) {
+        console.warn('Image compression failed, using original.', compErr);
+      }
+
+      // 2. Upload to Supabase Storage (Bucket: 'products')
+      const fileName = `${Date.now()}-${finalFile.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
       const { data, error } = await supabase
         .storage
         .from('products')
-        .upload(fileName, file);
+        .upload(fileName, finalFile);
 
       if (error) {
         console.error('Supabase Upload Error:', error);
@@ -257,7 +275,7 @@ export default function ProductManagerPage() {
             <Button
               onClick={() => setView('add')}
               disabled={products.length >= limit}
-              className={`w-full sm:w-auto text-white gap-2 h-11 px-6 font-bold shadow-lg rounded-xl transition-all ${products.length >= limit ? 'bg-gray-300 cursor-not-allowed text-gray-500 shadow-none' : 'bg-[#1E90FF] hover:bg-[#187bcd] shadow-[#1E90FF]/20'}`}
+              className={`w-full sm:w-auto text-white gap-2 h-11 px-6 font-bold rounded-xl transition-colors ${products.length >= limit ? 'bg-gray-300 cursor-not-allowed text-gray-500' : 'bg-[#1E90FF] hover:bg-[#187bcd]'}`}
             >
               {products.length >= limit ? t('Limit Reached') : <><Plus className="w-4 h-4" /> {t('Add Product')}</>}
             </Button>
@@ -269,12 +287,12 @@ export default function ProductManagerPage() {
         /* --- LIST VIEW --- */
         <div className="space-y-6">
           {products.length >= limit && limit < 100 && (
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white flex items-center justify-between shadow-xl mb-6 relative overflow-hidden group hover:scale-[1.01] transition-transform">
-              <div className="relative z-10">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white flex flex-col md:flex-row items-start md:items-center justify-between mb-6 relative overflow-hidden group">
+              <div className="relative z-10 mb-4 md:mb-0">
                 <h3 className="text-2xl font-black italic uppercase tracking-tighter mb-1">{t('Unlock Unlimited Products! 🚀')}</h3>
                 <p className="text-blue-100 text-sm font-medium opacity-90">{t('Upgrade to PRO plan to upload unlimited products and boost your sales.')}</p>
               </div>
-              <Button onClick={() => window.location.href = '/dashboard/upgrade'} className="relative z-10 bg-white text-blue-600 font-bold hover:bg-gray-50 shadow-lg border-2 border-transparent hover:border-blue-200">
+              <Button onClick={() => window.location.href = '/dashboard/upgrade'} className="relative z-10 bg-white text-blue-600 font-bold hover:bg-gray-50 border-2 border-transparent hover:border-blue-200">
                 {t('Upgrade Now ⚡')}
               </Button>
               {/* Decoration */}
@@ -291,17 +309,17 @@ export default function ProductManagerPage() {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-500">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase())).length > 0 ? (
               products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase())).map((product) => (
-                <Card key={product.id} className="group overflow-hidden border-border bg-white hover:shadow-xl transition-all">
+                <Card key={product.id} className="group overflow-hidden border-border bg-white transition-colors hover:border-primary/30">
                   <div className="aspect-video bg-gray-50 flex items-center justify-center border-b border-border relative overflow-hidden">
                     {product.image ? (
-                      <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
                     ) : (
                       <Package className="w-10 h-10 text-muted-foreground/30" />
                     )}
-                    <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-[10px] font-bold px-2 py-1 rounded border border-border uppercase tracking-wider shadow-sm z-10">
+                    <span className="absolute top-3 left-3 bg-white/95 text-[10px] font-bold px-2 py-1 rounded border border-border uppercase tracking-wider z-10">
                       {product.category}
                     </span>
                   </div>
@@ -440,7 +458,7 @@ export default function ProductManagerPage() {
               </div>
 
               <div className="flex gap-4 pt-4 border-t">
-                <Button onClick={handleSaveProduct} disabled={isSaving} className="flex-1 h-12 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20">
+                <Button onClick={handleSaveProduct} disabled={isSaving} className="flex-1 h-12 bg-primary text-white font-bold rounded-xl">
                   {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : view === 'edit' ? t('Update Product') : t('Save Product')}
                 </Button>
                 <Button variant="ghost" onClick={() => setView('list')} className="h-12 px-8 font-bold text-muted-foreground">{t('Cancel')}</Button>

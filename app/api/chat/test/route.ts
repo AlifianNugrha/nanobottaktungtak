@@ -2,29 +2,47 @@ import { NextRequest, NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
 import prisma from '@/lib/prisma';
 
-const groq = new Groq({
-    apiKey: process.env.GROQ_API_KEY || '',
-});
-
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { messages, config, products, userId } = body;
+        const { messages, config, products, userId, agentId } = body;
 
         if (!config || !config.model) {
             return NextResponse.json({ error: 'Model configuration is required' }, { status: 400 });
         }
 
+        let currentUserId = userId;
+        if (!currentUserId) {
+            const { createClient } = require('@/utils/supabase/server');
+            const supabase = await createClient();
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) currentUserId = user.id;
+        }
+
+        let apiKey = process.env.GROQ_API_KEY;
+        let isUsingCustomKey = false;
+        
+        if ((config.useCustomKey === 'true' || config.useCustomKey === true) && config.customGroqKey) {
+            apiKey = config.customGroqKey;
+            isUsingCustomKey = true;
+        }
+
+        const groq = new Groq({
+            apiKey: apiKey || '',
+        });
+
         const estimatedPromptTokens = JSON.stringify(messages).length / 4;
 
-        // Check Rate Limiting optionally
-        if (userId) {
+        // Check Rate Limiting optionally (Skip token limit if BYOK)
+        if (currentUserId && !isUsingCustomKey) {
             const user = await prisma.user.findUnique({
-                where: { id: userId },
-                select: { currentTokenUsage: true, maxTokenLimit: true, subscriptionPlan: true }
+                where: { id: currentUserId },
+                select: { currentTokenUsage: true, maxTokenLimit: true, subscriptionPlan: true, role: true }
             });
 
             if (user) {
+                // Check if user is expired or free logic
+                // For simplicity in test route, just checking raw token limit if not using BYOK
                 const maxTokensAllowed = user.maxTokenLimit;
                 if (user.currentTokenUsage + estimatedPromptTokens > maxTokensAllowed) {
                     return NextResponse.json(
@@ -54,7 +72,23 @@ export async function POST(req: NextRequest) {
         finalSystemPrompt += `\n\n=== 🔴 DATABASE PRODUK TOKO (LIVE) ===\nBerikut ini adalah katalog produk yang bisa Anda tawarkan kepada pelanggan:\n\n${productContext}`;
 
         // CUSTOM KNOWLEDGE BASE
-        if (config.knowledge && config.knowledge.length > 0) {
+        let hasInjectedDBKnowledge = false;
+        if (agentId) {
+            const knowledgeDocs = await (prisma as any).knowledgeDoc.findMany({
+                where: { agentId: agentId }
+            });
+            if (knowledgeDocs.length > 0) {
+                let knowledgeText = '\n\n=== 📚 KNOWLEDGE BASE (DOKUMEN PENTING) ===\nGunakan informasi berikut untuk menjawab pertanyaan user secara akurat:\n';
+                for (const doc of knowledgeDocs) {
+                    knowledgeText += `\n--- [Topik: ${doc.title}] ---\n${doc.content}\n`;
+                }
+                finalSystemPrompt += knowledgeText;
+                hasInjectedDBKnowledge = true;
+            }
+        }
+
+        // Add fallback/legacy physical knowledge files if no DB knowledge was found
+        if (!hasInjectedDBKnowledge && config.knowledge && config.knowledge.length > 0) {
             let knowledgeText = '\n\n=== 📚 KNOWLEDGE BASE ===\nUse this info to answer questions:\n';
             const fs = require('fs');
             const path = require('path');
@@ -89,9 +123,9 @@ export async function POST(req: NextRequest) {
         const totalTokensUsed = chatCompletion.usage?.total_tokens || 
             (estimatedPromptTokens + (reply.length / 4)); // fallback if usage not provided
 
-        if (userId) {
+        if (currentUserId) {
             await prisma.user.update({
-                where: { id: userId },
+                where: { id: currentUserId },
                 data: {
                     currentTokenUsage: { increment: Math.ceil(totalTokensUsed) },
                     aiMessageCount: { increment: 1 },

@@ -12,8 +12,14 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useLanguage } from '@/components/language-provider';
 
-function formatWhatsAppNumber(jid: string) {
+function formatContactNumber(jid: string) {
     if (!jid) return 'Unknown';
+
+    // Handle Telegram contacts (prefixed with 'tg_')
+    if (jid.startsWith('tg_')) {
+        return `Telegram User`;
+    }
+
     // Hapus domain (@s.whatsapp.net, @lid, @newsletter, etc)
     let num = jid.split('@')[0];
     
@@ -27,6 +33,11 @@ function formatWhatsAppNumber(jid: string) {
     }
     
     return num; // Untuk JID aneh seperti username
+}
+
+function getPlatformBadge(platform: string) {
+    if (platform === 'Telegram') return { label: 'TG', color: 'bg-blue-100 text-blue-600' };
+    return { label: 'WA', color: 'bg-green-100 text-green-600' };
 }
 
 interface Message {
@@ -64,7 +75,7 @@ export function InboxClient({ initialConversations, userId }: { initialConversat
     const selectedConversation = conversations.find(c => c.id === selectedId);
 
     const filteredConversations = conversations.filter(conv => {
-        const displayName = conv.contactName || formatWhatsAppNumber(conv.contactNumber);
+        const displayName = conv.contactName || formatContactNumber(conv.contactNumber);
         const q = searchQuery.toLowerCase();
         return displayName.toLowerCase().includes(q) || 
             conv.contactNumber.toLowerCase().includes(q) || 
@@ -188,15 +199,26 @@ export function InboxClient({ initialConversations, userId }: { initialConversat
                                         selectedId === conv.id ? "bg-blue-50/60 border-l-4 border-[#1E90FF]" : "border-l-4 border-transparent"
                                     )}
                                 >
-                                    <Avatar>
-                                        <AvatarFallback className="bg-[#1E90FF]/10 text-[#1E90FF] font-bold text-xs uppercase">
-                                            {(conv.contactName || conv.contactNumber.split('@')[0]).slice(0, 2)}
-                                        </AvatarFallback>
-                                    </Avatar>
+                                    <div className="relative">
+                                        <Avatar>
+                                            <AvatarFallback className={cn(
+                                                "font-bold text-xs uppercase",
+                                                conv.integration?.platform === 'Telegram' ? 'bg-blue-100 text-blue-600' : 'bg-[#1E90FF]/10 text-[#1E90FF]'
+                                            )}>
+                                                {(conv.contactName || conv.contactNumber.split('@')[0]).slice(0, 2)}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <span className={cn(
+                                            "absolute -bottom-0.5 -right-0.5 text-[7px] font-black px-1 py-0.5 rounded-full leading-none",
+                                            getPlatformBadge(conv.integration?.platform).color
+                                        )}>
+                                            {getPlatformBadge(conv.integration?.platform).label}
+                                        </span>
+                                    </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex justify-between items-center mb-1">
                                             <span className="font-semibold text-sm truncate">
-                                                {conv.contactName || formatWhatsAppNumber(conv.contactNumber)}
+                                                {conv.contactName || formatContactNumber(conv.contactNumber)}
                                             </span>
                                             <span className="text-[10px] text-slate-400">
                                                 {mounted ? new Date(conv.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
@@ -234,7 +256,8 @@ export function InboxClient({ initialConversations, userId }: { initialConversat
                             </Avatar>
                             <div className="min-w-0 flex-1">
                                 <h3 className="font-bold text-sm truncate w-full">
-                                    {selectedConversation.contactName || formatWhatsAppNumber(selectedConversation.contactNumber)}
+                                    {selectedConversation.contactName || formatContactNumber(selectedConversation.contactNumber)}
+                                    {selectedConversation.integration?.platform === 'Telegram' && <span className="text-[9px] ml-2 bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full font-bold">Telegram</span>}
                                 </h3>
                                 <div className="flex items-center gap-1.5 truncate">
                                     <span className={cn("w-2 h-2 rounded-full shrink-0", selectedConversation.isBotPaused ? "bg-amber-500" : "bg-green-500")} />

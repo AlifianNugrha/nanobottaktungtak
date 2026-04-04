@@ -252,6 +252,7 @@ export default function BotBuilderPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="WhatsApp">WhatsApp</SelectItem>
+                      <SelectItem value="Telegram">Telegram</SelectItem>
                       <SelectItem value="Website">Website</SelectItem>
                     </SelectContent>
                   </Select>

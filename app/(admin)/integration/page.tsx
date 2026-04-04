@@ -63,6 +63,11 @@ export default function IntegrationPage() {
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const [allBots, setAllBots] = useState<any[]>([]);
 
+  // Telegram State
+  const [telegramToken, setTelegramToken] = useState('');
+  const [telegramBotInfo, setTelegramBotInfo] = useState<any>(null);
+  const [isTelegramConnecting, setIsTelegramConnecting] = useState(false);
+
   // Widget Config State
   const [widgetConfig, setWidgetConfig] = useState({
     title: t('Chat Support'),
@@ -73,6 +78,7 @@ export default function IntegrationPage() {
 
   const platforms = [
     { id: 'wa', label: 'WhatsApp', icon: MessageSquare, color: 'text-green-500' },
+    { id: 'tg', label: 'Telegram', icon: Send, color: 'text-blue-400' },
     { id: 'web', label: 'Website', icon: Globe, color: 'text-primary' },
   ];
 
@@ -191,6 +197,46 @@ export default function IntegrationPage() {
     }, 1500);
   };
 
+  // === TELEGRAM CONNECT ===
+  const handleConnectTelegram = async (specificBotId?: string) => {
+    if (!telegramToken.trim()) {
+      alert(t('Masukkan Bot Token dari @BotFather'));
+      return;
+    }
+
+    setIsTelegramConnecting(true);
+    try {
+      const response = await fetch('/api/telegram/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          botToken: telegramToken.trim(),
+          name: `Telegram Bot`,
+          botId: specificBotId
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setTelegramBotInfo({
+          username: data.botUsername,
+          name: data.botName
+        });
+        setSessionId(data.sessionId);
+        setConfigStep('success');
+        fetchIntegrations();
+      } else {
+        alert(data.error || 'Failed to connect Telegram bot');
+      }
+    } catch (error) {
+      console.error('Error connecting Telegram:', error);
+      alert('Failed to connect Telegram bot');
+    } finally {
+      setIsTelegramConnecting(false);
+    }
+  };
+
   const resetModal = (open: boolean) => {
     setIsModalOpen(open);
     if (!open) {
@@ -205,6 +251,8 @@ export default function IntegrationPage() {
         setConfigStep('input');
         setQrCodeUrl(null);
         setSessionId(null);
+        setTelegramToken('');
+        setTelegramBotInfo(null);
         fetchIntegrations();
       }, 300);
     }
@@ -348,6 +396,21 @@ export default function IntegrationPage() {
                         </Button>
                       )}
 
+                      {/* Tombol Connect untuk Telegram */}
+                      {platform === 'Telegram' && (bot.config as any)?.status !== 'Active' && (bot.config as any)?.status !== 'Connected' && (
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedPlatform('Telegram');
+                            setIsModalOpen(true);
+                          }}
+                          className="w-full sm:w-auto h-9 px-4 text-xs font-bold gap-2 border-blue-200 text-blue-500 hover:bg-blue-50 rounded-xl"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          {t('Connect')}
+                        </Button>
+                      )}
+
                       {/* Tombol View Code untuk Widget */}
                       {platform === 'Website' && (
                         <Button variant="ghost" size="icon" className="w-full sm:w-auto text-blue-500 hover:text-blue-600 hover:bg-blue-50" onClick={() => {
@@ -380,14 +443,14 @@ export default function IntegrationPage() {
 
       <Dialog open={isModalOpen} onOpenChange={resetModal}>
         <DialogContent className="sm:max-w-[440px] p-0 overflow-hidden border-none shadow-2xl rounded-[2rem]">
-          <div className="bg-primary p-8 text-white relative">
+          <div className={`${selectedPlatform === 'Telegram' ? 'bg-gradient-to-r from-blue-500 to-cyan-500' : 'bg-primary'} p-8 text-white relative`}>
             <div className="relative z-10 flex items-center gap-4">
               <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-md">
-                {selectedPlatform === 'WhatsApp' ? <QrCode className="w-6 h-6" /> : selectedPlatform === 'Website' ? <Globe className="w-6 h-6" /> : <Settings2 className="w-6 h-6" />}
+                {selectedPlatform === 'WhatsApp' ? <QrCode className="w-6 h-6" /> : selectedPlatform === 'Telegram' ? <Send className="w-6 h-6" /> : selectedPlatform === 'Website' ? <Globe className="w-6 h-6" /> : <Settings2 className="w-6 h-6" />}
               </div>
               <div>
                 <DialogTitle className="text-xl font-bold">{configStep === 'qr' ? t('Scan QR Code') : configStep === 'success' ? t('Completed') : `${t('Connect')} ${selectedPlatform}`}</DialogTitle>
-                <DialogDescription className="text-primary/70 text-xs font-medium break-words">{t('Link your chatbot in seconds.')}</DialogDescription>
+                <DialogDescription className="text-white/70 text-xs font-medium break-words">{t('Link your chatbot in seconds.')}</DialogDescription>
               </div>
             </div>
           </div>
@@ -478,6 +541,65 @@ export default function IntegrationPage() {
                       {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : t('Create Widget & Get Code')}
                     </Button>
                   </div>
+                ) : selectedPlatform === 'Telegram' ? (
+                  /* ====== TELEGRAM FLOW ====== */
+                  <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
+                    <Label className="text-xs font-bold uppercase">{t('Select Bot to Connect')}</Label>
+                    <Select onValueChange={(value) => {
+                      (window as any).selectedBotIdForConnection = value;
+                    }}>
+                      <SelectTrigger className="h-12 rounded-xl bg-gray-50">
+                        <SelectValue placeholder={t("Choose a bot from Builder")} />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-none shadow-xl">
+                        <SelectItem value="none" className="rounded-lg py-2.5 font-bold text-blue-600 italic">
+                          {t('Skip (Auto-create bot)')}
+                        </SelectItem>
+                        {allBots.filter((b: any) => !b.integrationId).length > 0 ? (
+                          allBots.filter((b: any) => !b.integrationId).map((bot: any) => (
+                            <SelectItem key={bot.id} value={bot.id} className="rounded-lg py-2.5">
+                              {bot.name} ({bot.agent?.name || 'No Agent'})
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <div className="p-4 text-xs text-center text-muted-foreground italic">
+                            {t('All your bots are already connected or no bots found.')}
+                          </div>
+                        )}
+                      </SelectContent>
+                    </Select>
+
+                    <div className="space-y-2">
+                      <Label className="text-xs font-bold uppercase">{t('Bot Token')}</Label>
+                      <Input
+                        placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v..."
+                        value={telegramToken}
+                        onChange={(e) => setTelegramToken(e.target.value)}
+                        className="h-12 rounded-xl bg-gray-50 font-mono text-sm"
+                      />
+                    </div>
+
+                    <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                      <p className="text-xs text-blue-600 leading-relaxed">
+                        <b>Cara dapat Bot Token:</b><br/>
+                        1. Buka Telegram, cari <b>@BotFather</b><br/>
+                        2. Kirim <code>/newbot</code> dan ikuti instruksi<br/>
+                        3. Copy token yang diberikan, paste di sini
+                      </p>
+                    </div>
+
+                    <Button
+                      onClick={async () => {
+                        const botId = (window as any).selectedBotIdForConnection;
+                        const finalBotId = botId === 'none' ? undefined : botId;
+                        handleConnectTelegram(finalBotId);
+                      }}
+                      disabled={isTelegramConnecting || !telegramToken.trim()}
+                      className="w-full h-12 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 font-bold text-white rounded-xl shadow-lg"
+                    >
+                      {isTelegramConnecting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Send className="w-4 h-4 mr-2" /> {t('Connect Telegram Bot')}</>}
+                    </Button>
+                  </div>
                 ) : (
                   /* ====== STANDARD WHATSAPP FLOW ====== */
                   selectedPlatform === 'WhatsApp' ? (
@@ -537,7 +659,7 @@ export default function IntegrationPage() {
                     // Logic for Website (existing)
                     integrations.length > 0 ? (
                       <Button
-                        onClick={() => handleAction('connect')} // Fallback for safety, though Website has its own button above
+                        onClick={() => handleAction('connect')}
                         disabled={isSaving}
                         className="w-full h-12 bg-primary font-bold text-white rounded-xl shadow-lg shadow-primary/20"
                       >
@@ -571,15 +693,32 @@ export default function IntegrationPage() {
                   <CheckCircle2 className="w-10 h-10 text-emerald-500" />
                 </div>
                 <h3 className="text-2xl font-bold tracking-tight">{t('Success!')}</h3>
-                {selectedPlatform === 'Website' ? (
+                {selectedPlatform === 'Telegram' && telegramBotInfo ? (
+                  <div className="w-full mt-4 space-y-3">
+                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                      <p className="text-sm font-bold text-blue-700 mb-1">🤖 @{telegramBotInfo.username}</p>
+                      <p className="text-xs text-blue-600">{telegramBotInfo.name}</p>
+                    </div>
+                    <p className="text-sm text-muted-foreground px-4">
+                      {t('Bot Telegram berhasil terhubung! Sekarang user bisa chat ke bot Anda di Telegram dan AI akan membalas otomatis.')}
+                    </p>
+                    <div className="bg-gray-50 p-3 rounded-xl border">
+                      <p className="text-xs text-muted-foreground">
+                        <b>Link Bot:</b>{' '}
+                        <a href={`https://t.me/${telegramBotInfo.username}`} target="_blank" rel="noopener" className="text-blue-600 hover:underline">
+                          t.me/{telegramBotInfo.username}
+                        </a>
+                      </p>
+                    </div>
+                  </div>
+                ) : selectedPlatform === 'Website' ? (
                   <div className="w-full mt-4 space-y-4">
                     <p className="text-sm text-muted-foreground px-4">Copy this code to your website's <code>&lt;body&gt;</code> tag. Status will turn <b>Active</b> once installed.</p>
                     <div className="bg-gray-900 text-gray-300 p-4 rounded-xl text-xs font-mono text-left break-all relative group">
                       {`<script src="https://cd.nanoartif.com/widget.js?id=wdg_sample_id" defer></script>`}
                       <Button size="sm" variant="secondary" className="absolute top-2 right-2 h-6 text-[10px]" onClick={() => {
                         alert(t('Copied! Status updated to Active.'));
-                        // Logic to update bot status to 'Active' would go here
-                        fetchIntegrations(); // Refresh list to show potential status change
+                        fetchIntegrations();
                       }}>{t('Copy & Activate')}</Button>
                     </div>
                   </div>

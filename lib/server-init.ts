@@ -4,6 +4,7 @@
  */
 
 import { restoreExistingSessions } from './whatsapp-service';
+import { restoreExistingTelegramSessions } from './telegram-service';
 
 let initialized = false;
 
@@ -19,6 +20,10 @@ export async function initializeServer() {
         // Restore WhatsApp sessions from database
         console.log('[Server Init] Restoring WhatsApp sessions...');
         await restoreExistingSessions();
+
+        // Restore Telegram sessions from database
+        console.log('[Server Init] Restoring Telegram sessions...');
+        await restoreExistingTelegramSessions();
 
         initialized = true;
         console.log('[Server Init] Server initialization complete ✓');

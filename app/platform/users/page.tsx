@@ -54,16 +54,17 @@ export default function Users() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function load() {
-      setIsLoading(true);
-      const res = await getUsers();
-      if (res.success && res.data) {
-        setUsers(res.data);
-      }
-      setIsLoading(false);
-    }
     load();
   }, []);
+
+  async function load() {
+    setIsLoading(true);
+    const res = await getUsers();
+    if (res.success && res.data) {
+      setUsers(res.data);
+    }
+    setIsLoading(false);
+  }
 
   const filteredUsers = users.filter(
     (user) =>
@@ -137,7 +138,7 @@ export default function Users() {
                     </TableCell>
                     <TableCell>
                       <Badge className={getRoleBadgeColor(user.role)}>
-                        {user.subscriptionPlan === 'Pro' || user.role === 'PRO_USER' ? 'Pro Plan' : (user.subscriptionPlan === 'Enterprise' ? 'Enterprise' : 'Free Tier')}
+                        {user.role === 'PRO_USER' ? 'Pro Plan' : (user.role === 'ADMIN' ? 'Admin' : 'Free Tier')}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -158,12 +159,14 @@ export default function Users() {
                       {user.subscriptionStart ? (
                         <div className="flex flex-col">
                           <span>Since: {new Date(user.subscriptionStart).toLocaleDateString()}</span>
-                          {user.subscriptionEnd && (
-                            <span className="text-amber-500">Exp: {new Date(user.subscriptionEnd).toLocaleDateString()}</span>
-                          )}
+                          {user.subscriptionEnd ? (
+                            <span className={new Date(user.subscriptionEnd) < new Date() ? "text-red-500 font-bold" : "text-amber-500"}>
+                              Exp: {new Date(user.subscriptionEnd).toLocaleDateString()}
+                            </span>
+                          ) : null}
                         </div>
                       ) : (
-                        user.role === 'PRO_USER' ? <span className="text-purple-400 font-medium">Legacy Pro</span> : <span className="italic">No Active Sub</span>
+                        user.role === 'PRO_USER' ? <span className="text-purple-400 font-medium">Legacy Pro (No Expiry)</span> : <span className="italic">No Active Sub</span>
                       )}
                     </TableCell>
                     <TableCell className="text-right">
@@ -175,26 +178,50 @@ export default function Users() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-slate-900 border-slate-800 text-slate-200 shadow-xl">
                           {user.role !== 'PRO_USER' && (
-                            <DropdownMenuItem
-                              className="text-purple-400 focus:text-purple-300 focus:bg-purple-500/10 cursor-pointer flex items-center gap-2"
-                              onClick={async () => {
-                                if (confirm(`Activate Pro (1 Month) for ${user.name || user.email}?`)) {
-                                  setIsLoading(true);
-                                  const result = await grantProAccess(user.id, 30);
-                                  if (result.success) {
-                                    // Reload users
-                                    const res = await getUsers();
-                                    if (res.success && res.data) {
-                                      setUsers(res.data);
-                                    }
+                            <>
+                              <DropdownMenuItem
+                                className="text-purple-400 focus:text-purple-300 focus:bg-purple-500/10 cursor-pointer flex items-center gap-2"
+                                onClick={async () => {
+                                  if (confirm(`Activate Pro (1 Month) for ${user.name || user.email}?`)) {
+                                    setIsLoading(true);
+                                    const result = await grantProAccess(user.id, 30);
+                                    if (result.success) load();
+                                    setIsLoading(false);
                                   }
-                                  setIsLoading(false);
-                                }
-                              }}
-                            >
-                              <Crown className="w-4 h-4" />
-                              Activate Pro (1 Month)
-                            </DropdownMenuItem>
+                                }}
+                              >
+                                <Crown className="w-4 h-4" />
+                                Activate Pro (1 Month)
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-purple-400 focus:text-purple-300 focus:bg-purple-500/10 cursor-pointer flex items-center gap-2"
+                                onClick={async () => {
+                                  if (confirm(`Activate Pro (3 Months) for ${user.name || user.email}?`)) {
+                                    setIsLoading(true);
+                                    const result = await grantProAccess(user.id, 90);
+                                    if (result.success) load();
+                                    setIsLoading(false);
+                                  }
+                                }}
+                              >
+                                <Crown className="w-4 h-4" />
+                                Activate Pro (3 Months)
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-purple-400 focus:text-purple-300 focus:bg-purple-500/10 cursor-pointer flex items-center gap-2"
+                                onClick={async () => {
+                                  if (confirm(`Activate Pro (1 Year) for ${user.name || user.email}?`)) {
+                                    setIsLoading(true);
+                                    const result = await grantProAccess(user.id, 365);
+                                    if (result.success) load();
+                                    setIsLoading(false);
+                                  }
+                                }}
+                              >
+                                <Crown className="w-4 h-4" />
+                                Activate Pro (1 Year)
+                              </DropdownMenuItem>
+                            </>
                           )}
                           <DropdownMenuItem
                             className="text-red-400 focus:text-red-300 focus:bg-red-500/10 cursor-pointer flex items-center gap-2"

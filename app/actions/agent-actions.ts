@@ -22,9 +22,10 @@ export async function getAgents() {
         ]);
 
         const limitMap: Record<string, number> = { 'USER': 1, 'PRO_USER': 10, 'ADMIN': 999 };
-        const limit = dbUser ? (limitMap[dbUser.role as string] || 1) : 1;
+        const role = dbUser?.role || 'USER';
+        const limit = dbUser ? (limitMap[role as string] || 1) : 1;
 
-        return { success: true, data: agents, limit };
+        return { success: true, data: agents, limit, role };
     } catch (error) {
         console.error("Gagal mengambil agents:", error);
         return { success: false, error: "Gagal memuat data agent" };

@@ -47,6 +47,7 @@ export default function AgentPage() {
   const [view, setView] = useState<'list' | 'add' | 'edit'>('list');
   const [agents, setAgents] = useState<any[]>([]);
   const [limit, setLimit] = useState(99);
+  const [userRole, setUserRole] = useState('USER');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
@@ -62,6 +63,8 @@ export default function AgentPage() {
     name: '',
     model: 'llama-3.3-70b-versatile',
     prompt: '',
+    useCustomKey: false,
+    customGroqKey: '',
     products: [] as any[],
     knowledge: [] as any[]
   });
@@ -121,18 +124,33 @@ export default function AgentPage() {
       setAgents(res.data || []);
       // @ts-ignore
       setLimit(res.limit || 1);
+      // @ts-ignore
+      setUserRole(res.role || 'USER');
     }
     setIsLoading(false);
   };
 
   const handleSave = async () => {
     if (!formData.name) return alert(t("Agent Name is required!"));
+    
+    // Validasi BYOK
+    if (formData.useCustomKey && !formData.customGroqKey.trim()) {
+      return alert(t("Tolong masukkan Groq API Key Anda karena Anda memilih 'Gunakan API Sendiri'."));
+    }
+
     setIsSaving(true);
 
     const fData = new FormData();
     fData.append('name', formData.name);
     fData.append('model', formData.model);
     fData.append('prompt', formData.prompt);
+    
+    // Pass custom key config inside the config blob (simulated in actions, wait agent-actions merges model and config)
+    // Actually we need to make sure we append it so action can put it in config. 
+    // In agent-actions.ts, it parses all form data? 
+    fData.append('useCustomKey', formData.useCustomKey ? 'true' : 'false');
+    fData.append('customGroqKey', formData.customGroqKey);
+    
     fData.append('products', JSON.stringify(formData.products));
     fData.append('knowledge', JSON.stringify(formData.knowledge));
 
@@ -164,7 +182,7 @@ export default function AgentPage() {
   };
 
   const openAddMode = () => {
-    setFormData({ id: '', name: '', model: 'llama-3.3-70b-versatile', prompt: '', products: [], knowledge: [] });
+    setFormData({ id: '', name: '', model: 'llama-3.3-70b-versatile', prompt: '', useCustomKey: false, customGroqKey: '', products: [], knowledge: [] });
     setView('add');
   };
 
@@ -175,6 +193,8 @@ export default function AgentPage() {
       name: agent.name,
       model: config.model || 'llama-3.3-70b-versatile',
       prompt: config.instructions || '',
+      useCustomKey: config.useCustomKey === 'true' || config.useCustomKey === true,
+      customGroqKey: config.customGroqKey || '',
       products: config.products || [],
       knowledge: config.knowledge || []
     });
@@ -265,7 +285,7 @@ export default function AgentPage() {
           <Button
             onClick={openAddMode}
             disabled={agents.length >= limit}
-            className={`w-full sm:w-auto text-white gap-2 h-11 px-6 font-bold shadow-lg rounded-xl transition-all ${agents.length >= limit ? 'bg-gray-300 cursor-not-allowed text-gray-500 shadow-none' : 'bg-[#1E90FF] hover:bg-[#187bcd] shadow-[#1E90FF]/20'}`}
+            className={`w-full sm:w-auto text-white gap-2 h-11 px-6 font-bold rounded-xl transition-colors ${agents.length >= limit ? 'bg-gray-300 cursor-not-allowed text-gray-500' : 'bg-[#1E90FF] hover:bg-[#187bcd]'}`}
           >
             {agents.length >= limit ? t('Limit Reached') : <><Plus className="w-4 h-4" /> {t('Create Agent')}</>}
           </Button>
@@ -279,7 +299,7 @@ export default function AgentPage() {
       ) : view === 'list' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-500">
           {agents.length > 0 ? agents.map((agent) => (
-            <Card key={agent.id} className="p-6 border-border bg-white hover:shadow-xl transition-all relative group overflow-hidden">
+            <Card key={agent.id} className="p-6 border-border bg-white hover:border-[#1E90FF]/30 transition-colors relative group overflow-hidden">
               <div className="flex justify-between items-start mb-6">
                 <div className="w-14 h-14 bg-[#1E90FF]/10 rounded-2xl flex items-center justify-center border border-[#1E90FF]/20 text-[#1E90FF]">
                   <Bot className="w-7 h-7" />
@@ -296,7 +316,7 @@ export default function AgentPage() {
                 </div>
               </div>
               <div className="mt-6 pt-6 border-t border-border grid grid-cols-2 gap-3">
-                <Button onClick={() => { setActiveTestAgent(agent); setIsTesting(true); setTestMessages([]); }} className="bg-[#1E90FF] text-white font-bold text-xs gap-2 rounded-xl h-10 shadow-sm">
+                <Button onClick={() => { setActiveTestAgent(agent); setIsTesting(true); setTestMessages([]); }} className="bg-[#1E90FF] text-white font-bold text-xs gap-2 rounded-xl h-10">
                   <Play className="w-3 h-3 fill-current" /> {t('Test')}
                 </Button>
                 <Button onClick={() => openEditMode(agent)} variant="outline" className="text-xs font-bold rounded-xl h-10 border-border hover:bg-gray-50 gap-2">
@@ -314,7 +334,7 @@ export default function AgentPage() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in slide-in-from-bottom-4 duration-500">
           <div className="space-y-6">
-            <Card className="p-6 space-y-4 border-l-4 border-l-[#1E90FF] shadow-sm">
+            <Card className="p-6 space-y-4 border-l-4 border-l-[#1E90FF]">
               <div className="flex items-center justify-between">
                 <Label className="text-[10px] font-bold uppercase text-muted-foreground">{t('Knowledge Base')}</Label>
                 <Database className="w-4 h-4 text-[#1E90FF]" />
@@ -390,19 +410,104 @@ export default function AgentPage() {
                     placeholder="e.g. Sales Pro" className="h-11 rounded-xl bg-gray-50 font-jakarta"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase">{t('Model Engine')}</Label>
-                  <Select value={formData.model} onValueChange={(v) => setFormData({ ...formData, model: v })}>
-                    <SelectTrigger className="h-11 rounded-xl bg-gray-50 font-jakarta"><SelectValue /></SelectTrigger>
-                    <SelectContent className="font-jakarta">
-                      <SelectItem value="llama-3.3-70b-versatile">Llama 3.3 70B (Latest & Best)</SelectItem>
-                      <SelectItem value="llama-3.1-70b-versatile">Llama 3.1 70B (Stable)</SelectItem>
-                      <SelectItem value="llama-3.1-8b-instant">Llama 3.1 8B (Super Fast)</SelectItem>
-                      <SelectItem value="mixtral-8x7b-32768">Mixtral 8x7B (Long Context)</SelectItem>
-                      <SelectItem value="gemma2-9b-it">Google Gemma 2 9B</SelectItem>
-                      <SelectItem value="gpt-4-turbo">GPT-4 Turbo (Legacy)</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-4">
+                  <Label>Provider & Model AI</Label>
+                  <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700/50 bg-gray-50/50 dark:bg-slate-800/30 space-y-4">
+                    <div className="space-y-3">
+                      <Label className="text-slate-700 dark:text-slate-300">Sumber Kuota / API Provider</Label>
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <div 
+                          onClick={() => setFormData({ ...formData, useCustomKey: false })}
+                          className={`flex-1 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                            !formData.useCustomKey 
+                              ? 'border-purple-500 bg-purple-50 dark:bg-purple-500/10' 
+                              : 'border-slate-200 hover:border-slate-300 bg-white dark:border-slate-700 dark:hover:border-slate-600 dark:bg-slate-800/50'
+                          }`}
+                        >
+                          <div className="font-medium text-sm text-slate-900 dark:text-slate-200">Gunakan Kuota Platform</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Sesuai sisa paket akunmu</div>
+                        </div>
+                        
+                        <div 
+                          onClick={() => {
+                            if (userRole === 'PRO_USER' || userRole === 'ADMIN') {
+                              setFormData({ ...formData, useCustomKey: true });
+                            }
+                          }}
+                          className={`flex-1 p-3 rounded-lg border-2 transition-all ${
+                            formData.useCustomKey 
+                              ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10' 
+                              : 'border-slate-200 hover:border-slate-300 bg-white dark:border-slate-700 dark:hover:border-slate-600 dark:bg-slate-800/50'
+                          } ${userRole !== 'PRO_USER' && userRole !== 'ADMIN' ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="font-medium text-sm text-slate-900 dark:text-slate-200">Gunakan API Sendiri</div>
+                            {userRole !== 'PRO_USER' && userRole !== 'ADMIN' && (
+                              <span className="text-[10px] bg-amber-500/20 text-amber-600 dark:text-amber-500 px-1.5 py-0.5 rounded uppercase font-bold">Pro</span>
+                            )}
+                          </div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Unlimited tanpa potong kuota (Pribadi)</div>
+                        </div>
+                      </div>
+
+                      {formData.useCustomKey && (
+                        <div className="mt-4 animate-in slide-in-from-top-2 duration-300">
+                          <Label htmlFor="customKey" className="text-emerald-400 text-xs font-semibold mb-1 block flex items-center gap-1">
+                            <Sparkles className="w-3 h-3" /> Groq API Key Pribadi
+                          </Label>
+                          <Input
+                            id="customKey"
+                            type="password"
+                            placeholder="gsk_..."
+                            value={formData.customGroqKey}
+                            onChange={(e) => setFormData({ ...formData, customGroqKey: e.target.value })}
+                            className="bg-white dark:bg-slate-900 border-emerald-500/30 focus:border-emerald-500 font-mono text-sm dark:text-white"
+                          />
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Dapatkan dari console.groq.com/keys. Rahasia dan aman.</p>
+                        </div>
+                      )}
+                      {userRole !== 'PRO_USER' && userRole !== 'ADMIN' && !formData.useCustomKey && (
+                         <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 rounded-lg text-xs text-indigo-700 dark:text-indigo-300 flex gap-2 items-start mt-2">
+                            <Sparkles className="w-4 h-4 text-indigo-500 dark:text-indigo-400 flex-shrink-0" />
+                            <p>User <b className="font-bold">Free Tier</b> maksimal dibatasi 30 chat/hari. <Link href="/platform/users" className="text-indigo-600 dark:text-indigo-400 underline font-semibold">Tingkatkan ke PRO</Link> untuk chat unlimited atau sambungkan API Key Anda sendiri.</p>
+                         </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2 mt-4 pt-4 border-t border-slate-200 dark:border-slate-700/50">
+                      <Label>Model Language (Pilih Mesin AI)</Label>
+                      <Select
+                        value={formData.model}
+                        onValueChange={(val) => setFormData({ ...formData, model: val })}
+                      >
+                        <SelectTrigger className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-200 h-auto py-3 min-h-[44px]">
+                          <div className="text-left flex-1 truncate">
+                            <SelectValue placeholder="Pilih Model LLM" />
+                          </div>
+                        </SelectTrigger>
+                        <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-200">
+                          <SelectItem value="llama-3.3-70b-versatile" className="py-3">
+                            <div className="flex flex-col items-start text-left w-full overflow-hidden">
+                              <span className="font-semibold truncate w-full">Llama 3.3 70B Versatile</span>
+                              <span className="text-[10px] text-slate-500 dark:text-slate-400 whitespace-normal line-clamp-2">Paling Cerdas & Responsif (Rekomendasi)</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="llama-3.1-8b-instant" className="py-3">
+                            <div className="flex flex-col items-start text-left w-full overflow-hidden">
+                              <span className="font-semibold truncate w-full">Llama 3.1 8B Instant</span>
+                              <span className="text-[10px] text-slate-500 dark:text-slate-400 whitespace-normal line-clamp-2">Sangat Cepat & Hemat (Untuk chat simpel)</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="mixtral-8x7b-32768" className="py-3">
+                            <div className="flex flex-col items-start text-left w-full overflow-hidden">
+                              <span className="font-semibold truncate w-full">Mixtral 8x7B</span>
+                              <span className="text-[10px] text-slate-500 dark:text-slate-400 whitespace-normal line-clamp-2">Cocok untuk multi-bahasa</span>
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -413,7 +518,7 @@ export default function AgentPage() {
                       <Label className="text-xs font-bold uppercase">{t('Agent Products')}</Label>
                       <p className="text-[10px] text-muted-foreground">{t('Select products this agent can recommend.')}</p>
                     </div>
-                    <Button onClick={openImportModal} size="sm" className="h-8 text-xs gap-2 font-bold bg-[#1E90FF] text-white hover:bg-[#187bcd] shadow-sm shadow-[#1E90FF]/20 rounded-lg">
+                    <Button onClick={openImportModal} size="sm" className="h-8 text-xs gap-2 font-bold bg-[#1E90FF] text-white hover:bg-[#187bcd] rounded-lg">
                       <Database className="w-3.5 h-3.5" /> {t('Select from Catalog')}
                     </Button>
                   </div>
@@ -485,7 +590,7 @@ export default function AgentPage() {
                           <p className="text-xs text-muted-foreground line-clamp-2">{isObj ? p.description : t('No description')}</p>
                           {isObj && p.price && <p className="text-[10px] font-bold text-[#1E90FF] mt-0.5">{p.price}</p>}
                         </div>
-                        <div className="absolute top-2 right-2 flex gap-1 bg-white/80 backdrop-blur-sm rounded-lg pl-1">
+                        <div className="absolute top-2 right-2 flex gap-1 bg-white/95 rounded-lg pl-1">
                           <Button
                             variant="ghost"
                             size="icon"
@@ -527,7 +632,8 @@ ATURAN GAYA BAHASA (PENTING!):
 2. Jangan kaku. Gunakan bahasa Indonesia santai namun sopan. Boleh disingkat wajar seperti "yg", "bisa", "udah", "buat".
 3. Jawab pendek saja (1-2 kalimat). Orang di WhatsApp tidak suka baca teks yang panjang-panjang.
 4. Sesekali gunakan emoji senyum \uD83D\uDE0A atau \uD83D\uDE4F di akhir pesan.
-5. JANGAN PERNAH ngaku kalau kamu itu AI/Bot. Selalu bertingkah seperti manusia asli.`,
+5. JANGAN PERNAH ngaku kalau kamu itu AI/Bot. Selalu bertingkah seperti manusia asli.
+6. JANGAN gunakan tanda baca titik (.) dan tanda seru (!) di akhir kalimat. Gunakan tanda tanya (?) hanya untuk kalimat pertanyaan. Ini supaya pesan terasa natural kayak chat biasa`,
 
                     'sales_agresif': `Nama Bot: Sales Jago
 Perusahaan: [Nama Perusahaan Kamu]
@@ -536,11 +642,12 @@ PERAN KAMU:
 Tugas kamu adalah membujuk pelanggan untuk segera membeli produk. Tawarkan promo jika ada, yakinkan produk kita paling oke, dan giring pelanggan menuju Call to Action (pembayaran/checkout).
 
 ATURAN GAYA BAHASA (PENTING!):
-1. Gunakan bahasa persuasif dan bikin FOMO (contoh: "Yuk kak diorder mumpung lagi diskon!").
+1. Gunakan bahasa persuasif dan bikin FOMO (contoh: "Yuk kak diorder mumpung lagi diskon").
 2. Gunakan kata panggil "Kak" / "Sis" / "Bro".
 3. Tulis jawaban SINGKAT, MAKSIMAL 2 baris teks. Hindari bikin paragraf gantung panjang.
 4. Singkat kata kayak chat biasa: "udh", "bgt", "klo", "yg".
-5. Kalau kamu nggak tau jawabannya, arahkan kembali ke produk yang lagi dijual. JANGAN PERNAH bilang kamu itu bot atau AI.`,
+5. Kalau kamu nggak tau jawabannya, arahkan kembali ke produk yang lagi dijual. JANGAN PERNAH bilang kamu itu bot atau AI.
+6. JANGAN gunakan tanda baca titik (.) dan tanda seru (!) di akhir kalimat. Gunakan tanda tanya (?) hanya untuk kalimat pertanyaan. Ini supaya pesan terasa natural kayak chat biasa`,
 
                     'konsultan_ahli': `Nama Bot: Konsultan Ahli
 Perusahaan: [Nama Perusahaan Kamu]
@@ -553,7 +660,8 @@ ATURAN GAYA BAHASA (PENTING!):
 2. Jawaban tetap harus padat dan terstruktur (bisa menggunakan bullet points).
 3. Panggil pengguna dengan "Bapak/Ibu" (Atau nama mereka kalau tau).
 4. Jangan pernah bilang "Menurut KNOWLEDGE BASE...", langsung jawab saja layaknya sang pakar.
-5. Kamu adalah Manusia, jangan pernah sebut kata "AI" atau "Asisten Virtual".`,
+5. Kamu adalah Manusia, jangan pernah sebut kata "AI" atau "Asisten Virtual".
+6. JANGAN gunakan tanda baca titik (.) dan tanda seru (!) di akhir kalimat. Gunakan tanda tanya (?) hanya untuk kalimat pertanyaan. Ini supaya pesan terasa natural kayak chat biasa`,
 
                     'admin_gaul': `Nama Bot: Mimin Gaul
 Perusahaan: [Nama Perusahaan Kamu]
@@ -566,7 +674,8 @@ ATURAN GAYA BAHASA (PENTING!):
 2. Panggil mereka "Bestie", "Gan", atau "Bro/Sis".
 3. Jangan pakai awalan kalimat dengan huruf besar supaya kerasa natural banget.
 4. Jangan ngetik kepanjangan. Maks 1-2 baris doang terus submit.
-5. Serng-sering ketik wkwk atau xixixi. Jangan kaku kyk robot!`,
+5. Sering-sering ketik wkwk atau xixixi. Jangan kaku kyk robot.
+6. JANGAN gunakan tanda baca titik (.) dan tanda seru (!) di akhir kalimat. Gunakan tanda tanya (?) hanya untuk kalimat pertanyaan. Ini supaya pesan terasa natural kayak chat biasa`,
 
                     'cs_formal': `Nama Bot: CS Korporat
 Perusahaan: [Instansi Resmi Kamu]
@@ -579,7 +688,8 @@ ATURAN GAYA BAHASA (PENTING!):
 2. Panggil pengguna dengan "Bapak/Ibu Pimpinan" atau sesuaikan situasinya.
 3. Selalu awali dan akhiri percakapan dengan salam formal jika itu adalah chat pembuka.
 4. Jangan berikan jawaban bertele-tele. Maksimal 3 kalimat efektif.
-5. Kalau informasi tidak tersedia di database, jawab sopan: "Mohon maaf, kami belum memiliki informasi mengenai hal tersebut. Ada hal lain yang bisa dibantu?"`
+5. Kalau informasi tidak tersedia di database, jawab sopan: "Mohon maaf, kami belum memiliki informasi mengenai hal tersebut Ada hal lain yang bisa dibantu?"
+6. JANGAN gunakan tanda baca titik (.) dan tanda seru (!) di akhir kalimat. Gunakan tanda tanya (?) hanya untuk kalimat pertanyaan. Ini supaya pesan terasa natural kayak chat biasa`
                   };
                   if (templates[val]) {
                     setFormData({ ...formData, prompt: templates[val] });
@@ -664,6 +774,7 @@ ATURAN GAYA BAHASA (PENTING!):
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
+                          agentId: activeTestAgent.id,
                           messages: updatedMessages,
                           config: {
                             model: (activeTestAgent.config as any)?.model || 'llama-3.3-70b-versatile',
