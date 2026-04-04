@@ -210,11 +210,29 @@ async function handleTelegramMessage(sessionId: string, msg: TelegramBot.Message
         // Save conversation
         await saveMessageToHistory(sessionId, contactIdentifier, messageText, response, contactName);
 
-        // Send response
-        await session.bot.sendMessage(msg.chat.id, response, { parse_mode: 'Markdown' }).catch(async () => {
-            // Fallback: send without markdown if parsing fails
-            await session.bot.sendMessage(msg.chat.id, response);
-        });
+        // Check for image tag in response
+        const imageMatch = response.match(/\[IMAGE:\s*(.*?)\]/i);
+
+        if (imageMatch && imageMatch[1]) {
+            let imageUrl = imageMatch[1].trim();
+            const caption = response.replace(/\[IMAGE:\s*.*?\]/i, '').trim();
+            
+            try {
+                // Send photo with caption
+                await session.bot.sendPhoto(msg.chat.id, imageUrl, { caption: caption, parse_mode: 'Markdown' }).catch(async () => {
+                    await session.bot.sendPhoto(msg.chat.id, imageUrl, { caption: caption });
+                });
+            } catch (imgError) {
+                console.error('Failed to send image on Telegram, falling back to text:', imgError);
+                await session.bot.sendMessage(msg.chat.id, caption || response);
+            }
+        } else {
+            // Send normal text response
+            await session.bot.sendMessage(msg.chat.id, response, { parse_mode: 'Markdown' }).catch(async () => {
+                // Fallback: send without markdown if parsing fails
+                await session.bot.sendMessage(msg.chat.id, response);
+            });
+        }
 
         console.log(`[Telegram ${sessionId}] Response sent to ${contactName}`);
     } else {

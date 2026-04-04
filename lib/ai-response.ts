@@ -118,7 +118,7 @@ PENTING: Nama di atas adalah data dari database. Jika di dalam percakapan (Chat 
                 return `- ID: ${p.id}\n  Nama: ${p.name}\n  Deskripsi: ${p.description || 'Tidak ada info'}\n  Harga: Rp ${p.price}\n  Stok: ${p.stock}\n  ImageURL: ${p.image || 'KOSONG'}`;
             }).join('\n\n');
 
-            systemPrompt += `\n\n=== 🔴 DATABASE PRODUK TOKO (LIVE) ===\nBerikut ini adalah katalog produk yang bisa Anda tawarkan kepada pelanggan:\n\n${productContext}`;
+            systemPrompt += `\n\n=== 🔴 DATABASE PRODUK TOKO (LIVE) ===\nBerikut ini adalah katalog produk yang bisa Anda tawarkan kepada pelanggan:\n\n${productContext}\n\n[PANDUAN MENGIRIM GAMBAR PENTING]:\nJika pelanggan meminta melihat gambar suatu produk, ATAU kamu sedang merekomendasikan produk yang memiliki ImageURL valid (bukan KOSONG), kamu SANGAT DISARANKAN melampirkan gambar dengan menyisipkan format persis seperti ini di balasanmu:\n[IMAGE: (paste url di sini)]\n\nContoh yang Benar:\n"Tentu kak, ini fotonya ya:\n[IMAGE: https://xxx]\nHarganya cuma 10 ribu lho."`;
             console.log(`Injecting ${dbProducts.length} products into AI Context.`);
         } else {
             systemPrompt += `\n\n=== INFO ===\nSaat ini stok toko sedang kosong. Jika user tanya produk, minta maaf dan bilang stok belum update.`;
