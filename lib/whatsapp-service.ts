@@ -24,6 +24,8 @@ const globalForWhatsApp = global as unknown as { activeSessions: Map<string, Wha
 const activeSessions = globalForWhatsApp.activeSessions || new Map<string, WhatsAppSession>();
 if (process.env.NODE_ENV !== 'production') globalForWhatsApp.activeSessions = activeSessions;
 
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 /**
  * Reverted to simple file-based auth for local stability
  */
@@ -270,39 +272,60 @@ export async function createWhatsAppSession(sessionId: string) {
                 // Save conversation
                 await saveMessageToHistory(sessionId, from, messageText, response, contactName);
 
-                // Check for image tag in response
-                const imageMatch = response.match(/\[IMAGE:\s*(.*?)\]/i);
+                // Split response into multiple bubbles if delimiter exists
+                const bubbles = response.split('\n\n\n').filter(b => b.trim().length > 0);
+                console.log(`[Session ${sessionId}] Response split into ${bubbles.length} bubbles`);
 
-                if (imageMatch && imageMatch[1]) {
-                    let imageUrl = imageMatch[1].trim();
-                    const caption = response.replace(/\[IMAGE:\s*.*?\]/i, '').trim();
-
-                    try {
-                        let imageSource: any = { url: imageUrl };
-
-                        // Handle local file uploads (relative path)
-                        if (imageUrl.startsWith('/')) {
-                            const localPath = path.join(process.cwd(), 'public', imageUrl);
-                            if (fs.existsSync(localPath)) {
-                                const fileBuffer = fs.readFileSync(localPath);
-                                imageSource = fileBuffer; // Baileys accepts buffer directly
-                            } else {
-                                const fullUrl = new URL(imageUrl, process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').toString();
-                                imageSource = { url: fullUrl };
-                            }
-                        }
-
-                        await sock.sendMessage(from, {
-                            image: imageSource,
-                            caption: caption
-                        });
-                    } catch (imgError) {
-                        console.error('Failed to send image, falling back to text:', imgError);
-                        await sock.sendMessage(from, { text: caption || response });
+                for (let i = 0; i < bubbles.length; i++) {
+                    const bubble = bubbles[i];
+                    
+                    // Show "typing..." status for each bubble
+                    await sock.sendPresenceUpdate('composing', from);
+                    
+                    // Add a small natural delay between bubbles (except the first one which already had a delay from processing)
+                    if (i > 0) {
+                        // Delay proportional to text length (but min 1.5s, max 3s)
+                        const bubbleDelay = Math.min(Math.max(bubble.length * 20, 1500), 3000);
+                        await delay(bubbleDelay);
                     }
-                } else {
-                    // Send text response
-                    await sock.sendMessage(from, { text: response });
+
+                    // Check for image tag in this specific bubble
+                    const imageMatch = bubble.match(/\[IMAGE:\s*(.*?)\]/i);
+
+                    if (imageMatch && imageMatch[1]) {
+                        let imageUrl = imageMatch[1].trim();
+                        const caption = bubble.replace(/\[IMAGE:\s*.*?\]/i, '').trim();
+
+                        try {
+                            let imageSource: any = { url: imageUrl };
+
+                            // Handle local file uploads (relative path)
+                            if (imageUrl.startsWith('/')) {
+                                const localPath = path.join(process.cwd(), 'public', imageUrl);
+                                if (fs.existsSync(localPath)) {
+                                    const fileBuffer = fs.readFileSync(localPath);
+                                    imageSource = fileBuffer;
+                                } else {
+                                    const fullUrl = new URL(imageUrl, process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').toString();
+                                    imageSource = { url: fullUrl };
+                                }
+                            }
+
+                            await sock.sendMessage(from, {
+                                image: imageSource,
+                                caption: caption
+                            });
+                        } catch (imgError) {
+                            console.error('Failed to send image, falling back to text:', imgError);
+                            await sock.sendMessage(from, { text: caption || bubble });
+                        }
+                    } else {
+                        // Send text response for this bubble
+                        await sock.sendMessage(from, { text: bubble.trim() });
+                    }
+
+                    // Stop "typing..." status
+                    await sock.sendPresenceUpdate('paused', from);
                 }
             } else {
                 // If no agent is configured, stay silent. 

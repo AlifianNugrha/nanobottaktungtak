@@ -19,6 +19,8 @@ const globalForTelegram = global as unknown as { telegramSessions: Map<string, T
 const telegramSessions = globalForTelegram.telegramSessions || new Map<string, TelegramSession>();
 if (process.env.NODE_ENV !== 'production') globalForTelegram.telegramSessions = telegramSessions;
 
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 /**
  * Create and start a Telegram bot session
  */
@@ -210,28 +212,45 @@ async function handleTelegramMessage(sessionId: string, msg: TelegramBot.Message
         // Save conversation
         await saveMessageToHistory(sessionId, contactIdentifier, messageText, response, contactName);
 
-        // Check for image tag in response
-        const imageMatch = response.match(/\[IMAGE:\s*(.*?)\]/i);
+        // Split response into multiple bubbles if delimiter exists
+        const bubbles = response.split('\n\n\n').filter(b => b.trim().length > 0);
+        console.log(`[Telegram ${sessionId}] Response split into ${bubbles.length} bubbles`);
 
-        if (imageMatch && imageMatch[1]) {
-            let imageUrl = imageMatch[1].trim();
-            const caption = response.replace(/\[IMAGE:\s*.*?\]/i, '').trim();
-            
-            try {
-                // Send photo with caption
-                await session.bot.sendPhoto(msg.chat.id, imageUrl, { caption: caption, parse_mode: 'Markdown' }).catch(async () => {
-                    await session.bot.sendPhoto(msg.chat.id, imageUrl, { caption: caption });
-                });
-            } catch (imgError) {
-                console.error('Failed to send image on Telegram, falling back to text:', imgError);
-                await session.bot.sendMessage(msg.chat.id, caption || response);
+        for (let i = 0; i < bubbles.length; i++) {
+            const bubble = bubbles[i];
+
+            // Show "typing..." status for each bubble
+            await session.bot.sendChatAction(msg.chat.id, 'typing');
+
+            // Add a small natural delay between bubbles (except the first one)
+            if (i > 0) {
+                const bubbleDelay = Math.min(Math.max(bubble.length * 20, 1500), 3000);
+                await delay(bubbleDelay);
             }
-        } else {
-            // Send normal text response
-            await session.bot.sendMessage(msg.chat.id, response, { parse_mode: 'Markdown' }).catch(async () => {
-                // Fallback: send without markdown if parsing fails
-                await session.bot.sendMessage(msg.chat.id, response);
-            });
+
+            // Check for image tag in this specific bubble
+            const imageMatch = bubble.match(/\[IMAGE:\s*(.*?)\]/i);
+
+            if (imageMatch && imageMatch[1]) {
+                let imageUrl = imageMatch[1].trim();
+                const caption = bubble.replace(/\[IMAGE:\s*.*?\]/i, '').trim();
+                
+                try {
+                    // Send photo with caption
+                    await session.bot.sendPhoto(msg.chat.id, imageUrl, { caption: caption, parse_mode: 'Markdown' }).catch(async () => {
+                        await session.bot.sendPhoto(msg.chat.id, imageUrl, { caption: caption });
+                    });
+                } catch (imgError) {
+                    console.error('Failed to send image on Telegram, falling back to text:', imgError);
+                    await session.bot.sendMessage(msg.chat.id, caption || bubble);
+                }
+            } else {
+                // Send normal text response for this bubble
+                await session.bot.sendMessage(msg.chat.id, bubble.trim(), { parse_mode: 'Markdown' }).catch(async () => {
+                    // Fallback: send without markdown if parsing fails
+                    await session.bot.sendMessage(msg.chat.id, bubble.trim());
+                });
+            }
         }
 
         console.log(`[Telegram ${sessionId}] Response sent to ${contactName}`);

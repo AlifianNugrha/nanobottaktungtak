@@ -79,7 +79,18 @@ export async function generateAgentResponse(agent: any, userMessage: string, his
 - Nama Terdaftar: ${customer.name || 'Belum tahu'}
 - No. Telp: ${customer.phone}
 
-PENTING: Nama di atas adalah data dari database. Jika di dalam percakapan (Chat History) user memperkenalkan diri dengan nama lain (misal: "Nama saya Bapak Rangga"), kamu WAJIB menggunakan nama yang disebut user di chat tersebut. Abaikan data database jika berbeda dengan pengakuan user di chat.`;
+PENTING: Nama di atas adalah data dari database. Jika di dalam percakapan (Chat History) user memperkenalkan diri dengan nama lain (misal: "Nama saya Bapak Rangga"), kamu WAJIB menggunakan nama yang disebut user di chat tersebut. Abaikan data database jika berbeda dengan pengakuan user di chat.
+
+=== 💬 PANDUAN PENGIRIMAN MULTI-BUBBLE (PENTING) ===
+Agar terlihat sangat manusiawi, kamu disarankan membagi jawabanmu menjadi beberapa balon chat jika:
+1. Jawabanmu cukup panjang (lebih dari 2-3 paragraf).
+2. Kamu ingin memberikan info produk dulu baru bertanya di akhir ("Gimana kak? Tertarik?").
+3. Kamu ingin mengirim beberapa foto produk secara terpisah.
+
+Cara pemisahan: Gunakan TIGA KALI BARIS BARU ( \n\n\n ) di antara teks yang ingin kamu pisahkan.
+Contoh:
+"Halo kak, ini harganya ya:\nRp 50.000\n\n\nApakah kakak ingin pesan sekarang?"
+(Ini akan dikirim sebagai 2 balon chat terpisah dengan jeda natural).`;
         }
 
         // Inject KNOWLEDGE BASE (RAG Lite)
