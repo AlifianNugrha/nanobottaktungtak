@@ -175,6 +175,58 @@ Contoh:
     }
 }
 
+// === GENERATE FOLLOW-UP RESPONSE ===
+export async function generateFollowUpResponse(agent: any, history: any[] = [], customer: any = null): Promise<{ response: string; tokensUsed: number }> {
+    try {
+        const config = agent.config || {};
+        const apiKey = config.customGroqKey || process.env.GROQ_API_KEY;
+        
+        if (!apiKey) return { response: '', tokensUsed: 0 };
+
+        const groq = new Groq({ apiKey });
+
+        let systemPrompt = config.instructions || `Anda adalah ${agent.name}. Asisten toko yang ramah.`;
+        
+        systemPrompt += `\n\n=== 🕒 KONTEKS FOLLOW-UP ===
+PENGGUNA BELUM MEMBALAS CHAT KAMU SELAMA 1 JAM.
+Tugas kamu: Kirim pesan sapaan/follow-up yang sangat singkat, sopan, dan tidak memaksa (non-spam).
+Tujuan: Mengingatkan user jika mereka tertarik dengan produk/layanan atau sekadar menyapa balik agar percakapan tetap hidup.
+Gaya bahasa: Santai, seperti manusia asli, jangan kaku. Gunakan nama user jika ada di history.
+
+PENTING: Jangan gunakan kata-kata seperti "Saya menindaklanjuti" atau "Apakah ada yang bisa saya bantu lagi?". 
+Cukup sapa dengan ramah. Misal: "Pagi kak, kabari ya kalau jadi ambil produknya" atau "Halo kak, gimana kemarin jadinya?".
+
+KONTRADIKSI/PEMBATALAN: 
+Jika dari histori chat terlihat bahwa user SUDAH MEMBELI, SUDAH BAYAR, atau PERCAKAPAN SUDAH BERAKHIR SUKSES (misal: bot sudah mengucapkan terima kasih atas orderan), maka kamu WAJIB mengembalikan string KOSONG ( "" ). Jangan mengirim follow-up untuk orang yang sudah closing.
+
+FORMAT BALASAN: Gunakan 1-2 bubble chat pendek saja (maks 1 kali penanda \n\n\n).`;
+
+        // Format history for AI
+        const historyMessages = history
+            .filter((msg: any) => msg.role === 'user' || msg.role === 'assistant')
+            .map((msg: any) => ({ role: msg.role, content: msg.content }));
+
+        const completion = await groq.chat.completions.create({
+            messages: [
+                { role: 'system', content: systemPrompt },
+                ...historyMessages,
+                { role: 'user', content: '(Sapaan otomatis karena tidak ada balasan)' }
+            ],
+            model: agent.config?.model || 'llama-3.3-70b-versatile',
+            temperature: 0.8,
+            max_tokens: 256,
+        });
+
+        const response = completion.choices[0]?.message?.content || '';
+        const tokensUsed = completion.usage?.total_tokens || 0;
+        
+        return { response, tokensUsed };
+    } catch (error) {
+        console.error('Error generating follow-up:', error);
+        return { response: '', tokensUsed: 0 };
+    }
+}
+
 // === USAGE LIMIT HELPERS ===
 
 export async function checkUsageLimit(userId: string): Promise<{ allowed: boolean, message?: string }> {

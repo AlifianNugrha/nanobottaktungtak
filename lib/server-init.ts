@@ -5,6 +5,7 @@
 
 import { restoreExistingSessions } from './whatsapp-service';
 import { restoreExistingTelegramSessions } from './telegram-service';
+import { checkAndSendFollowUps } from './follow-up-service';
 
 let initialized = false;
 
@@ -27,6 +28,12 @@ export async function initializeServer() {
 
         initialized = true;
         console.log('[Server Init] Server initialization complete ✓');
+
+        // Start Auto Follow-up Background Service (Runs every 10 minutes)
+        setInterval(() => {
+            checkAndSendFollowUps().catch(err => console.error('[Follow-up Interval Error]', err));
+        }, 10 * 60 * 1000);
+        console.log('[Server Init] Auto Follow-up background service started (10m interval)');
     } catch (error) {
         console.error('[Server Init] Error during initialization:', error);
     }
